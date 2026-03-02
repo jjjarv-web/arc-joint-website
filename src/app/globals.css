@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-inter);
+}
+
+body {
+  background: #ffffff;
+  color: #111111;
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #111111;
+  color: #ffffff;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
