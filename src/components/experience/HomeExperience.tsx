@@ -25,6 +25,7 @@ export function HomeExperience() {
   const [error, setError] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const container = useRef<HTMLDivElement>(null);
+  const productSectionRef = useRef<HTMLElement>(null);
   const kneeSectionRef = useRef<HTMLDivElement>(null);
   const assessmentStepsRef = useRef<HTMLDivElement>(null);
 
@@ -199,6 +200,36 @@ export function HomeExperience() {
           },
         }
       );
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) {
+        gsap.set(".product-dim-overlay", { opacity: 0.55 });
+        return;
+      }
+
+      const handoffMedia = gsap.matchMedia();
+      handoffMedia.add(
+        { isMobile: "(max-width: 767px)", isDesktop: "(min-width: 768px)" },
+        (context) => {
+          const conditions = context.conditions as { isMobile: boolean; isDesktop: boolean };
+          const dimTarget = conditions.isMobile ? 0.5 : 0.55;
+
+          gsap.set(".product-dim-overlay", { opacity: 0 });
+
+          gsap.to(".product-dim-overlay", {
+            opacity: dimTarget,
+            ease: "none",
+            scrollTrigger: {
+              trigger: kneeSectionRef.current,
+              start: "top bottom",
+              end: "top 72%",
+              scrub: 1.1,
+            },
+          });
+        }
+      );
+
+      return () => handoffMedia.revert();
     },
     { scope: container }
   );
@@ -331,7 +362,11 @@ export function HomeExperience() {
         </div>
       </section>
 
-      <section className="product-section relative z-20 flex min-h-screen items-center bg-white px-6 py-20">
+      <section
+        ref={productSectionRef}
+        className="product-section sticky top-0 z-20 flex h-screen items-center overflow-hidden bg-white px-6 py-20"
+      >
+        <div className="product-dim-overlay pointer-events-none absolute inset-0 bg-black opacity-0" />
         <div className="mx-auto grid w-full max-w-6xl items-center gap-14 md:grid-cols-2">
           <div
             className="product-visual flex aspect-square items-center justify-center rounded-3xl bg-[#f4f4f4] text-xs uppercase tracking-[0.28em] text-black/20"
@@ -358,10 +393,8 @@ export function HomeExperience() {
         </div>
       </section>
 
-      <div ref={kneeSectionRef} className="relative z-20 bg-white px-6 pb-10">
-        <div className="mx-auto w-full max-w-6xl">
-          <KneeSelector selectedRegion={painRegion} onSelect={handlePainSelection} />
-        </div>
+      <div ref={kneeSectionRef} className="relative z-30 bg-black">
+        <KneeSelector selectedRegion={painRegion} onSelect={handlePainSelection} />
       </div>
 
       <section className="relative z-20 min-h-screen bg-[#f6f6f6] px-6 py-24">
