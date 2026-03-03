@@ -343,6 +343,11 @@ export function HomeExperience() {
     if (step === "knee" || !assessmentPanelRef.current) {
       return;
     }
+    // Only fade in when first entering assessment (knee → duration). Do NOT re-animate on duration→status or status→zip — that causes a white flash.
+    if (step !== "duration") {
+      gsap.set(assessmentPanelRef.current, { autoAlpha: 1 });
+      return;
+    }
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const duration = prefersReducedMotion ? 0 : 0.35;
     gsap.fromTo(
