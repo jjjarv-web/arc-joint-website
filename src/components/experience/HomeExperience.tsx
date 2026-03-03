@@ -14,23 +14,31 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 type AssessmentStep = "knee" | "duration" | "status" | "zip";
 type PainRegion = KneePainRegion | "";
 
-function getPersonalizedMessage(status: string, duration?: string): { headline: string; subtext: string } {
-  if (status.includes("scheduled") || status.includes("waiting")) {
+function getPersonalizedReview(status: string, duration?: string): { statement: string; credential: string } {
+  if (status.includes("scheduled")) {
     return {
-      headline: "Surgery isn't the only path.",
-      subtext: "Find ARC providers near you.",
+      statement: "Knee replacement is major surgery — and about 1 in 5 people still report ongoing pain after TKA.",
+      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options that are minimally invasive and typically outpatient, before moving forward with replacement.",
     };
   }
-  if (status.includes("considering")) {
+  if (status.includes("waiting")) {
     return {
-      headline: "You're in the right place.",
-      subtext: "Find providers near you.",
+      statement: "Pausing before replacement is common — recovery can extend well beyond the first few weeks, and about 20% still experience persistent pain after TKA.",
+      credential: "Some orthopedic surgeons and neurosurgeons now offer ARC evaluations focused on pain relief and improved mobility using minimally invasive, typically outpatient approaches.",
+    };
+  }
+  if (status.includes("still in pain")) {
+    return {
+      statement: "Most people expect replacement to end the pain — but research shows about 1 in 5 patients still report persistent pain after TKA.",
+      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options specifically for post-replacement pain. Peer-reviewed evidence supports that PNS can reduce persistent pain and improve function in appropriate patients.",
     };
   }
   const isEarly = duration?.toLowerCase().includes("less than 6");
   return {
-    headline: isEarly ? "Catching it early can open options." : "Exploring early can open options.",
-    subtext: "Find providers near you.",
+    statement: isEarly
+      ? "If replacement hasn't been recommended yet, you're in the ideal ARC moment — get clarity before committing to irreversible surgery."
+      : "Exploring options before replacement is the right move — catching it early can open doors that aren't available later.",
+    credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC approaches that are minimally invasive and typically outpatient, designed to help preserve future options.",
   };
 }
 
@@ -44,6 +52,8 @@ export function HomeExperience() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [reviewVisible, setReviewVisible] = useState(false);
   const [providerZip, setProviderZip] = useState("");
   const [providerLoading, setProviderLoading] = useState(false);
   const [providerError, setProviderError] = useState("");
@@ -342,6 +352,21 @@ export function HomeExperience() {
     );
   }, [step]);
 
+  useEffect(() => {
+    if (step !== "zip") {
+      setAnalyzing(false);
+      setReviewVisible(false);
+      return;
+    }
+    setReviewVisible(false);
+    setAnalyzing(true);
+    const t = window.setTimeout(() => {
+      setAnalyzing(false);
+      setReviewVisible(true);
+    }, 1800);
+    return () => window.clearTimeout(t);
+  }, [step]);
+
   return (
     <main ref={container} className="relative bg-white text-[#111111]">
       <button
@@ -514,14 +539,14 @@ export function HomeExperience() {
                       Back
                     </button>
                     <p className="mb-5 text-2xl font-light text-white/94 md:text-3xl">
-                      Have you been told you need replacement?
+                      Has a doctor recommended knee replacement?
                     </p>
                     <div className="space-y-3">
                       {[
                         "Yes, it is scheduled",
                         "Yes, but I am waiting",
                         "Not yet",
-                        "I am considering options",
+                        "Had a replacement — still in pain",
                       ].map((value) => (
                         <button
                           key={value}
@@ -539,49 +564,74 @@ export function HomeExperience() {
                   </>
                 )}
 
-                {step === "zip" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setStep("status")}
-                      className="mb-4 text-sm text-white/60 underline hover:text-white/80"
-                    >
-                      Back
-                    </button>
-                    {(() => {
-                      const { headline, subtext } = getPersonalizedMessage(replacementStatus, duration);
-                      return (
-                        <>
-                          <p className="text-xl font-light text-white/80 md:text-2xl">{headline}</p>
-                          <p className="mt-2 text-3xl font-medium text-white/94 md:text-4xl">{subtext}</p>
-                        </>
-                      );
-                    })()}
-                    <form className="mt-8" onSubmit={runSearch}>
-                      <label className="sr-only" htmlFor="zip-input">
-                        Enter ZIP code
-                      </label>
-                      <input
-                        id="zip-input"
-                        type="text"
-                        inputMode="numeric"
-                        pattern="\d{5}"
-                        maxLength={5}
-                        value={zip}
-                        onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
-                        placeholder="Enter ZIP code"
-                        className="w-full border-b-2 border-white/30 bg-transparent py-3 text-4xl font-light tracking-tight text-white outline-none placeholder:text-white/40 md:text-5xl"
-                      />
-                      <button
-                        type="submit"
-                        disabled={zip.length !== 5 || loading}
-                        className="mt-5 rounded-full border border-white/30 px-6 py-2.5 text-white/90 transition-colors hover:bg-white/10 disabled:opacity-40"
-                      >
-                        {loading ? "Searching..." : "Search"}
-                      </button>
-                    </form>
-                  </>
+                {step === "zip" && analyzing && (
+                  <div className="flex min-h-[12rem] flex-col items-center justify-center gap-4">
+                    <p className="animate-pulse text-[11px] uppercase tracking-[0.22em] text-white/50">
+                      Analyzing your inputs…
+                    </p>
+                    <div className="flex gap-1.5">
+                      {[0, 1, 2].map((i) => (
+                        <span
+                          key={i}
+                          className="h-1 w-1 rounded-full bg-white/30 animate-pulse"
+                          style={{ animationDelay: `${i * 0.2}s` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 )}
+
+                {step === "zip" && !analyzing && reviewVisible && (() => {
+                  const { statement, credential } = getPersonalizedReview(replacementStatus, duration);
+                  return (
+                    <div className="animate-[fadeIn_0.5s_ease-out_forwards]">
+                      <button
+                        type="button"
+                        onClick={() => setStep("status")}
+                        className="mb-5 text-sm text-white/50 underline hover:text-white/70"
+                      >
+                        Back
+                      </button>
+                      <p className="mb-2 text-[11px] uppercase tracking-[0.18em] text-white/40">
+                        Your Knee Pain Review
+                      </p>
+                      <p className="text-[17px] font-light leading-relaxed text-white/90 md:text-lg">
+                        {statement}
+                      </p>
+                      <p className="mt-4 text-[15px] font-light leading-relaxed text-white/60 md:text-base">
+                        {credential}
+                      </p>
+                      <div className="mt-8 border-t border-white/10 pt-7">
+                        <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-white/40">
+                          Find a center near you
+                        </p>
+                        <form onSubmit={runSearch}>
+                          <label className="sr-only" htmlFor="zip-input">
+                            Enter ZIP code
+                          </label>
+                          <input
+                            id="zip-input"
+                            type="text"
+                            inputMode="numeric"
+                            pattern="\d{5}"
+                            maxLength={5}
+                            value={zip}
+                            onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
+                            placeholder="ZIP code"
+                            className="w-full border-b border-white/25 bg-transparent pb-3 text-3xl font-light tracking-tight text-white outline-none placeholder:text-white/30 md:text-4xl"
+                          />
+                          <button
+                            type="submit"
+                            disabled={zip.length !== 5 || loading}
+                            className="mt-5 rounded-full border border-white/25 px-6 py-2.5 text-sm font-medium text-white/90 transition-colors hover:bg-white/10 disabled:opacity-40"
+                          >
+                            {loading ? "Searching…" : "Find Providers"}
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               {error && <p className="mt-4 text-center text-sm text-red-400">{error}</p>}
