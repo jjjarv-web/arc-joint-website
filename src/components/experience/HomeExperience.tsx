@@ -11,12 +11,12 @@ import { KneeSelector, type KneePainRegion } from "@/components/experience/KneeS
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-type AssessmentStep = "intro" | "duration" | "status" | "zip";
+type AssessmentStep = "knee" | "duration" | "status" | "zip";
 type PainRegion = KneePainRegion | "";
 
 export function HomeExperience() {
   const [exploreOpen, setExploreOpen] = useState(false);
-  const [step, setStep] = useState<AssessmentStep>("intro");
+  const [step, setStep] = useState<AssessmentStep>("knee");
   const [painRegion, setPainRegion] = useState<PainRegion>("");
   const [duration, setDuration] = useState("");
   const [replacementStatus, setReplacementStatus] = useState("");
@@ -236,6 +236,17 @@ export function HomeExperience() {
 
   const nearestLabel = useMemo(() => (results.length > 0 ? `${results.length} providers` : ""), [results]);
 
+  const resetAssessment = () => {
+    setStep("knee");
+    setPainRegion("");
+    setDuration("");
+    setReplacementStatus("");
+    setZip("");
+    setError("");
+    setResults([]);
+    setLoading(false);
+  };
+
   const runSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setLoading(true);
@@ -404,6 +415,7 @@ export function HomeExperience() {
             <button
               type="button"
               onClick={() => {
+                resetAssessment();
                 requestAnimationFrame(() => {
                   kneeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
                 });
@@ -414,8 +426,8 @@ export function HomeExperience() {
             </button>
           </div>
 
-          {step !== "intro" && (
-              <div ref={assessmentStepsRef} data-reveal className="space-y-8">
+          {step !== "knee" && (
+            <div ref={assessmentStepsRef} data-reveal className="space-y-8">
                 <div className="rounded-2xl border border-black/10 bg-white p-8">
                   {step === "duration" && (
                     <>
@@ -535,7 +547,7 @@ export function HomeExperience() {
                     </Link>
                   </div>
                 )}
-              </div>
+            </div>
           )}
         </div>
       </section>

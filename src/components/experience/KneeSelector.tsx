@@ -15,6 +15,8 @@ interface KneeSelectorProps {
   onSelect: (region: KneePainRegion) => void;
 }
 
+const TRUST_HEADLINE = "Performed by Orthopedic and Neurosurgeons in select medical centers";
+const TRUST_SPECS = ["Minimally Invasive.", "Reversible.", "Covered by Insurance."];
 const regionLabel: Record<KneePainRegion, string> = {
   anterior: "Front (anterior)",
   medial: "Inner (medial)",
@@ -24,15 +26,25 @@ const PNG_ASPECT_RATIO = 2000 / 4000;
 const LEFT_KNEE_X = 0.445;
 const RIGHT_KNEE_X = 0.575;
 const KNEE_Y = 0.675;
+const SOFT_GATE_MS = 2400;
 type KneeSide = "left" | "right";
 
 export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const interactionFieldRef = useRef<HTMLDivElement>(null);
   const pulseTimeoutRef = useRef<number | null>(null);
+  const gateTimeoutRef = useRef<number | null>(null);
   const clickLockRef = useRef(false);
+  const interactiveRef = useRef(false);
+  const gateTriggeredRef = useRef(false);
   const [interactive, setInteractive] = useState(false);
+  const [softGateActive, setSoftGateActive] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [debugHotspots] = useState(() =>
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("debugHotspots") === "1"
+      : false
+  );
   const [hoverRegion, setHoverRegion] = useState<KneePainRegion | "">("");
   const [hoverSide, setHoverSide] = useState<KneeSide | "">("");
   const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number }>({ x: 50, y: 68 });
@@ -46,106 +58,161 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
     return () => query.removeEventListener("change", syncPreference);
   }, []);
 
+  useEffect(() => {
+    // Preload key visual assets for smoother first reveal.
+    const body = new window.Image();
+    body.src = "/images/knee-assessment.png";
+    const grain = new window.Image();
+    grain.src = "/images/grain-overlay.png";
+  }, []);
+
   useGSAP(
     () => {
-      setInteractive(reducedMotion);
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
+      const blurStart = isMobile ? 4 : 6;
+      const stageElement = sectionRef.current?.querySelector(".knee-stage");
+
       setHoverRegion("");
       setHoverSide("");
       setPressedRegion("");
+      clickLockRef.current = false;
+      interactiveRef.current = reducedMotion;
+      gateTriggeredRef.current = false;
+      setInteractive(reducedMotion);
+      setSoftGateActive(false);
 
       if (reducedMotion) {
-        gsap.set(".knee-headline", { autoAlpha: 1, y: 0 });
-        gsap.set(".knee-subheadline", { autoAlpha: 1, y: 0, scale: 1, color: "rgba(255,255,255,1)" });
-        gsap.set(".knee-image-shell", { autoAlpha: 1, scale: 1, filter: "blur(0px)" });
-        gsap.set(".knee-knee-glow", { autoAlpha: 0.88, scale: 1 });
-        gsap.set(".knee-zone-hint", { autoAlpha: 0.68 });
+        gsap.set(".knee-light-field", { autoAlpha: 0.86 });
+        gsap.set(".knee-trust-copy", { autoAlpha: 0 });
+        gsap.set(".knee-step-label", { autoAlpha: 1, y: 0 });
+        gsap.set(".knee-headline", { autoAlpha: 1, y: 0, scale: 1, color: "rgba(255,255,255,1)" });
+        gsap.set(".knee-image-shell", { autoAlpha: 0.95, scale: 1.05, filter: "blur(0px)" });
+        gsap.set(".knee-knee-glow", { autoAlpha: 1, scale: 1 });
+        gsap.set(".knee-zone-hint", { autoAlpha: 0.72 });
         gsap.set(".knee-zone-hint-core", { scale: 1 });
-        gsap.set(".knee-interaction-field", { autoAlpha: 1 });
+        gsap.set(".knee-interaction-field", { autoAlpha: 0.9 });
+        gsap.set(".knee-light-sweep", { autoAlpha: 0.04, xPercent: -20 });
         return;
       }
 
-      gsap.set(".knee-headline", { autoAlpha: 0, y: 52, filter: "blur(10px)" });
-      gsap.set(".knee-subheadline", {
-        autoAlpha: 0,
-        y: 18,
-        scale: 0.96,
-        filter: "blur(6px)",
-        color: "rgba(255,255,255,0.72)",
+      gsap.set(".knee-light-field", { autoAlpha: 0.54 });
+      gsap.set(".knee-trust-headline", {
+        autoAlpha: 0.34,
+        y: 54,
+        scale: 1.52,
+        filter: "blur(5px)",
+        color: "rgba(154,162,176,0.36)",
       });
+      gsap.set(".knee-spec", { autoAlpha: 0, y: 16 });
+      gsap.set(".knee-trust-copy", { autoAlpha: 1 });
+      gsap.set(".knee-step-label", { autoAlpha: 0, y: 8 });
+      gsap.set(".knee-headline", { autoAlpha: 0, y: 22, scale: 0.98 });
       gsap.set(".knee-image-shell", {
-        autoAlpha: 0,
-        y: 38,
-        scale: 0.95,
-        rotateY: 0,
+        autoAlpha: 0.08,
+        y: 10,
+        scale: 1,
+        rotateY: -5,
         rotateX: 0,
-        filter: "blur(10px)",
+        filter: `blur(${blurStart}px)`,
         transformPerspective: 1200,
         transformOrigin: "50% 46%",
       });
-      gsap.set(".knee-figure", { scale: 0.78, yPercent: 0, transformOrigin: "50% 62%" });
-      gsap.set(".knee-knee-glow", { autoAlpha: 0.12, scale: 0.88, transformOrigin: "50% 68%" });
+      gsap.set(".knee-figure", { scale: 0.86, yPercent: 0, transformOrigin: "50% 62%" });
+      gsap.set(".knee-knee-glow", { autoAlpha: 0.12, scale: 0.9, transformOrigin: "50% 68%" });
       gsap.set(".knee-zone-hint", { autoAlpha: 0.18 });
       gsap.set(".knee-zone-hint-core", { scale: 0.92 });
-      gsap.set(".knee-interaction-field", { autoAlpha: 0.3 });
+      gsap.set(".knee-interaction-field", { autoAlpha: 0.2 });
       gsap.set(".knee-light-sweep", { xPercent: -130, autoAlpha: 0.045 });
 
-      const headlineTimeline = gsap.timeline({
-        defaults: { ease: "power3.out" },
+      const stageTimeline = gsap.timeline({
+        defaults: { ease: "none" },
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: "top 55%",
-          toggleActions: "play none none reverse",
+          start: "top top",
+          end: "+=420%",
+          scrub: 0.85,
+          pin: stageElement,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            const shouldEnterInteractive = !interactiveRef.current && self.progress >= 0.88;
+            const shouldExitInteractive = interactiveRef.current && self.progress <= 0.78;
+            if (shouldEnterInteractive || shouldExitInteractive) {
+              const nextInteractive = shouldEnterInteractive;
+              interactiveRef.current = nextInteractive;
+              clickLockRef.current = false;
+              setInteractive(nextInteractive);
+              if (!nextInteractive) {
+                gateTriggeredRef.current = false;
+                setSoftGateActive(false);
+                setHoverRegion("");
+                setHoverSide("");
+                if (gateTimeoutRef.current) {
+                  window.clearTimeout(gateTimeoutRef.current);
+                  gateTimeoutRef.current = null;
+                }
+              } else if (!gateTriggeredRef.current) {
+                gateTriggeredRef.current = true;
+                setSoftGateActive(true);
+                if (gateTimeoutRef.current) {
+                  window.clearTimeout(gateTimeoutRef.current);
+                }
+                gateTimeoutRef.current = window.setTimeout(() => {
+                  setSoftGateActive(false);
+                  gateTimeoutRef.current = null;
+                }, SOFT_GATE_MS);
+              }
+            }
+          },
         },
       });
 
-      headlineTimeline
-        .to(".knee-headline", { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 1.5 }, 0)
-        .to(".knee-subheadline", { autoAlpha: 0.78, y: 0, scale: 1, filter: "blur(0px)", duration: 1.2 }, 0.16);
-
-      gsap.to(".knee-image-shell", {
+      // Entry reveal: by full viewport lock, trust headline has finished zooming to center.
+      gsap.to(".knee-trust-headline", {
         autoAlpha: 1,
         y: 0,
-        scale: 1.02,
+        scale: 1,
         filter: "blur(0px)",
-        ease: "none",
+        color: "rgba(255,255,255,0.95)",
+        duration: 1,
+        ease: "power2.out",
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: "top 55%",
-          end: "top 20%",
-          scrub: 1.15,
+          start: "top 90%",
+          end: "top top",
+          scrub: 1.1,
         },
       });
 
-      const zoomTimeline = gsap.timeline({
-        defaults: { ease: "power2.out" },
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top -3%",
-          toggleActions: "play none none reverse",
-        },
-        onComplete: () => {
-          clickLockRef.current = false;
-          setInteractive(true);
-        },
-        onReverseComplete: () => {
-          clickLockRef.current = false;
-          setInteractive(false);
-        },
-      });
-
-      zoomTimeline
-        .to(".knee-image-shell", { rotateY: 0, rotateX: 0, duration: 1.78 }, 0)
-        .to(".knee-figure", { scale: 0.98, yPercent: 0, duration: 1.86 }, 0)
-        .to(".knee-headline", { scale: 0.86, autoAlpha: 0.55, duration: 1.05 }, 0.08)
-        .to(
-          ".knee-subheadline",
-          { scale: 1.22, autoAlpha: 0.98, y: 2, color: "rgba(255,255,255,1)", duration: 1.05 },
-          0.12
+      // 0.00-0.15 calibration, 0.15-0.40 trust lock.
+      stageTimeline
+        .set(
+          ".knee-trust-headline",
+          {
+            autoAlpha: 1,
+            y: 0,
+            scale: 1,
+            filter: "blur(0px)",
+            color: "rgba(255,255,255,0.95)",
+          },
+          0
         )
-        .to(".knee-knee-glow", { autoAlpha: 1, scale: 1, duration: 1.15 }, 0.28)
-        .to(".knee-zone-hint", { autoAlpha: 0.72, duration: 0.85, stagger: 0.06 }, 0.56)
-        .to(".knee-zone-hint-core", { scale: 1, duration: 0.85, stagger: 0.06 }, 0.56)
-        .to(".knee-interaction-field", { autoAlpha: 0.86, duration: 0.8 }, 0.45);
+        .to(".knee-light-field", { autoAlpha: 0.82, duration: 0.15 }, 0)
+        // Smooth trust headline handoff into specs.
+        .to(".knee-trust-headline", { autoAlpha: 0, y: -10, scale: 0.95, duration: 0.22 }, 0.12)
+        .to(".knee-spec", { autoAlpha: 0.94, y: 0, duration: 0.24, stagger: 0.06 }, 0.18)
+        // Clear specs fully before interaction headline enters.
+        .to(".knee-spec", { autoAlpha: 0, y: -10, duration: 0.16, stagger: 0.03 }, 0.4)
+        .to(".knee-trust-copy", { autoAlpha: 0, duration: 0.12 }, 0.48)
+        .set(".knee-trust-copy, .knee-spec", { autoAlpha: 0 }, 0.54)
+        .to(".knee-image-shell", { autoAlpha: 0.95, y: 0, scale: 1.05, rotateY: 0, filter: "blur(0px)", duration: 0.34 }, 0.5)
+        .to(".knee-figure", { scale: 0.98, yPercent: 0, duration: 0.34 }, 0.5)
+        .to(".knee-knee-glow", { autoAlpha: 1, scale: 1, duration: 0.28 }, 0.54)
+        // Click-ready headline and zones settle in and hold (one unit, no premature step label).
+        .to(".knee-step-label", { autoAlpha: 0.82, y: 0, duration: 0.2 }, 0.68)
+        .to(".knee-headline", { autoAlpha: 1, y: 0, scale: 1, color: "rgba(255,255,255,1)", duration: 0.22 }, 0.68)
+        .to(".knee-zone-hint", { autoAlpha: 0.84, duration: 0.2, stagger: 0.03 }, 0.7)
+        .to(".knee-zone-hint-core", { scale: 1, duration: 0.2, stagger: 0.03 }, 0.7)
+        .to(".knee-interaction-field", { autoAlpha: 0.94, duration: 0.2 }, 0.7);
 
       gsap.to(".knee-light-sweep", {
         xPercent: 130,
@@ -167,17 +234,45 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
       clickLockRef.current = false;
     }
 
-      gsap.to(".knee-interaction-field", {
-        autoAlpha: interactive ? 0.86 : 0.52,
-        duration: 0.25,
-        ease: "power2.out",
-      });
-      gsap.to(".knee-zone-hint", {
-        autoAlpha: interactive ? 0.72 : 0.26,
-        duration: 0.25,
-        ease: "power2.out",
-      });
+    gsap.to(".knee-interaction-field", {
+      autoAlpha: interactive ? 0.9 : 0.25,
+      duration: 0.25,
+      ease: "power2.out",
+    });
+    gsap.to(".knee-zone-hint", {
+      autoAlpha: interactive ? 0.72 : 0.26,
+      duration: 0.25,
+      ease: "power2.out",
+    });
   }, [interactive, reducedMotion]);
+
+  useEffect(() => {
+    if (reducedMotion || !interactive) {
+      return;
+    }
+
+    gsap.to(".knee-zone-hint", {
+      autoAlpha: softGateActive ? 0.94 : 0.76,
+      duration: 0.28,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+    if (softGateActive) {
+      gsap.fromTo(
+        ".knee-zone-hint-core",
+        { scale: 1, boxShadow: "0 0 0 1px rgba(138,210,255,0.25),0 0 26px rgba(138,210,255,0.2)" },
+        {
+          scale: 1.18,
+          boxShadow: "0 0 0 1px rgba(138,210,255,0.58),0 0 52px rgba(138,210,255,0.42)",
+          duration: 0.4,
+          yoyo: true,
+          repeat: 2,
+          stagger: 0.08,
+          ease: "power2.inOut",
+        }
+      );
+    }
+  }, [softGateActive, reducedMotion, interactive]);
 
   useEffect(() => {
     if (!interactive || reducedMotion) {
@@ -185,19 +280,19 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
     }
 
     const leftPulse = gsap.to(".knee-zone-hint-core--left", {
-      scale: 1.045,
-      duration: 1.1,
+      scale: 1.08,
+      duration: 0.9,
       ease: "sine.inOut",
       repeat: -1,
       yoyo: true,
     });
     const rightPulse = gsap.to(".knee-zone-hint-core--right", {
-      scale: 1.045,
-      duration: 1.1,
+      scale: 1.08,
+      duration: 0.9,
       ease: "sine.inOut",
       repeat: -1,
       yoyo: true,
-      delay: 0.2,
+      delay: 0.14,
     });
 
     return () => {
@@ -211,16 +306,24 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
       if (pulseTimeoutRef.current) {
         window.clearTimeout(pulseTimeoutRef.current);
       }
+      if (gateTimeoutRef.current) {
+        window.clearTimeout(gateTimeoutRef.current);
+      }
     },
     []
   );
 
   const handleSelect = (region: KneePainRegion) => {
-    if (!interactive || clickLockRef.current) {
+    if (!interactiveRef.current || clickLockRef.current) {
       return;
     }
 
     clickLockRef.current = true;
+    setSoftGateActive(false);
+    if (gateTimeoutRef.current) {
+      window.clearTimeout(gateTimeoutRef.current);
+      gateTimeoutRef.current = null;
+    }
     if (pulseTimeoutRef.current) {
       window.clearTimeout(pulseTimeoutRef.current);
     }
@@ -242,10 +345,6 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
     if (Math.abs(localY) > 0.165 || Math.abs(localX) > 0.145) {
       return null;
     }
-
-    // Region map follows the user reference, simplified:
-    // A = center-lower/front, I = inner, O = outer.
-    // Keep a slightly narrower anterior lane so inner has more room.
     if (localY > 0.01 && Math.abs(localX) < 0.045) {
       return "anterior";
     }
@@ -266,7 +365,6 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
     const imageHeight = imageWidth / PNG_ASPECT_RATIO;
     const imageLeft = (bounds.width - imageWidth) / 2;
     const imageTop = (bounds.height - imageHeight) / 2;
-
     const xInImage = event.clientX - bounds.left - imageLeft;
     const yInImage = event.clientY - bounds.top - imageTop;
     if (xInImage < 0 || yInImage < 0 || xInImage > imageWidth || yInImage > imageHeight) {
@@ -291,34 +389,59 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-[190vh] bg-black text-white">
-      <div className="knee-stage sticky top-0 h-screen overflow-hidden px-6 py-[9vh] md:px-10">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-1/2 top-[62%] h-[300px] w-[360px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(100,180,255,0.08)_0%,_rgba(100,180,255,0.02)_45%,_rgba(0,0,0,0)_72%)] md:h-[360px] md:w-[420px]" />
+    <section ref={sectionRef} className="relative min-h-[520vh] bg-black text-white">
+      <div className="knee-stage relative h-screen overflow-hidden px-6 py-[9vh] md:px-10">
+        <div className="knee-light-field pointer-events-none absolute inset-0 z-[1] will-change-[opacity]">
+          <div className="absolute left-1/2 top-[58%] h-[340px] w-[460px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(156,196,232,0.12)_0%,_rgba(72,112,150,0.08)_34%,_rgba(0,0,0,0)_72%)] md:h-[420px] md:w-[560px]" />
+          <div className="absolute right-[12%] top-[32%] h-[300px] w-[300px] rounded-full bg-[radial-gradient(circle,_rgba(188,208,226,0.07)_0%,_rgba(0,0,0,0)_72%)] blur-xl" />
+        </div>
+        <div className="pointer-events-none absolute inset-0 z-[2] bg-[url('/images/grain-overlay.png')] bg-repeat opacity-[0.05]" />
+        <div className="pointer-events-none absolute inset-0 z-[4] overflow-hidden">
+          <div className="knee-light-sweep absolute -left-1/3 top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/[0.04] to-transparent will-change-[transform,opacity]" />
         </div>
 
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          <div className="knee-light-sweep absolute -left-1/3 top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/[0.05] to-transparent" />
-        </div>
-
-        <div className="relative flex h-full flex-col items-center justify-between">
+        <div className="relative z-[5] flex h-full flex-col items-center justify-between">
+          <div className="knee-trust-copy pointer-events-none absolute left-1/2 top-[26%] w-full max-w-5xl -translate-x-1/2 px-4 text-center">
+            <p className="knee-trust-headline relative text-balance text-[clamp(34px,5.2vw,72px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white/94 [text-shadow:0_0_34px_rgba(145,180,220,0.1)]">
+              Performed by{" "}
+              <span className="font-semibold text-white">Orthopedic</span>
+              {" "}and{" "}
+              <span className="font-semibold text-white">Neurosurgeons</span>
+              {" "}in select medical centers
+            </p>
+            <p className="sr-only">
+              {TRUST_HEADLINE}
+            </p>
+            <div className="mt-7 space-y-2">
+              {TRUST_SPECS.map((spec) => (
+                <p key={spec} className="knee-spec text-[clamp(16px,1.7vw,24px)] font-light tracking-[-0.01em] text-white/80">
+                  {spec}
+                </p>
+              ))}
+            </div>
+          </div>
           <div className="relative mx-auto max-w-6xl text-center">
-            <h3 className="knee-headline text-balance text-[clamp(44px,6.8vw,78px)] font-light leading-[1.04] tracking-[-0.02em]">
-              Where does it hurt?
+            <p className="knee-step-label mb-3 text-[11px] uppercase tracking-[0.18em] text-white/70">Step 1 of 4</p>
+            <h3
+              className="knee-headline text-balance text-[clamp(44px,6.8vw,78px)] font-light leading-[1.04] tracking-[-0.02em]"
+              style={{ opacity: 0 }}
+            >
+              Tap{" "}
+              <span className="font-semibold text-white">Knee</span>
+              {" "}where it hurts to begin.
             </h3>
-            <p className="knee-subheadline mt-4 text-sm tracking-[0.01em] text-white/72">Tap where your knee hurts most.</p>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[560px]">
+          <div className="relative z-[3] mx-auto w-full max-w-[560px]">
             <div className="relative mx-auto h-[58vh] w-full overflow-hidden md:h-[66vh]">
               <div
-                className={`knee-image-shell relative h-full w-full transition-transform duration-300 ${
+                className={`knee-image-shell relative h-full w-full transition-transform duration-300 will-change-[transform,opacity,filter] ${
                   pressedRegion || selectedRegion ? "scale-[1.02]" : "scale-100"
                 }`}
               >
                 <div className="knee-figure relative h-full w-full">
                   <div
-                    className="knee-knee-glow pointer-events-none absolute inset-0 z-[1]"
+                    className="knee-knee-glow pointer-events-none absolute inset-0 z-[1] will-change-[transform,opacity]"
                     style={{
                       background: `radial-gradient(circle at ${LEFT_KNEE_X * 100}% ${KNEE_Y * 100}%, rgba(106,192,255,0.22) 0%, rgba(106,192,255,0.07) 14%, rgba(0,0,0,0) 30%), radial-gradient(circle at ${RIGHT_KNEE_X * 100}% ${KNEE_Y * 100}%, rgba(106,192,255,0.22) 0%, rgba(106,192,255,0.07) 14%, rgba(0,0,0,0) 30%)`,
                     }}
@@ -337,7 +460,7 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
               <div
                 ref={interactionFieldRef}
                 onPointerMove={(event) => {
-                  if (!interactive || event.pointerType === "touch") {
+                  if (!interactiveRef.current || event.pointerType === "touch") {
                     return;
                   }
                   const resolved = resolveRegionFromEvent(event);
@@ -355,7 +478,7 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
                   setHoverSide("");
                 }}
                 onPointerUp={(event) => {
-                  if (!interactive) {
+                  if (!interactiveRef.current) {
                     return;
                   }
                   const resolved = resolveRegionFromEvent(event);
@@ -367,10 +490,7 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
                   setCursorPoint({ x: resolved.x, y: resolved.y });
                   gsap.fromTo(
                     `.knee-zone-hint-core--${resolved.side}`,
-                    {
-                      scale: 1,
-                      boxShadow: "0 0 0 1px rgba(138,210,255,0.25),0 0 26px rgba(138,210,255,0.2)",
-                    },
+                    { scale: 1, boxShadow: "0 0 0 1px rgba(138,210,255,0.25),0 0 26px rgba(138,210,255,0.2)" },
                     {
                       scale: 1.12,
                       boxShadow: "0 0 0 1px rgba(138,210,255,0.45),0 0 36px rgba(138,210,255,0.34)",
@@ -402,6 +522,14 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
                 >
                   <div className="knee-zone-hint-core knee-zone-hint-core--right h-full w-full rounded-full border border-[#8ad2ff]/45 bg-[#8ad2ff]/[0.04] shadow-[0_0_0_1px_rgba(138,210,255,0.25),0_0_26px_rgba(138,210,255,0.2)]" />
                 </div>
+                {debugHotspots && (
+                  <>
+                    <div className="pointer-events-none absolute left-[1%] top-[1%] rounded border border-[#8ad2ff]/55 bg-black/50 px-2 py-1 text-[10px] text-[#bfe6ff]">
+                      debugHotspots=1
+                    </div>
+                    <div className="pointer-events-none absolute inset-0 border border-[#8ad2ff]/20" />
+                  </>
+                )}
                 {hoverRegion && (
                   <div
                     className="pointer-events-none absolute -translate-x-1/2 -translate-y-[130%] rounded-full border border-[#8ad2ff]/45 bg-black/70 px-3 py-1 text-[11px] tracking-[0.02em] text-[#d8efff] shadow-[0_0_24px_rgba(138,210,255,0.2)] backdrop-blur-sm"
@@ -414,6 +542,17 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
             </div>
           </div>
 
+          <div className="sr-only" role="group" aria-label="Select pain region">
+            <button type="button" aria-label="Select front knee pain" onClick={() => handleSelect("anterior")}>
+              Front
+            </button>
+            <button type="button" aria-label="Select inner knee pain" onClick={() => handleSelect("medial")}>
+              Inner
+            </button>
+            <button type="button" aria-label="Select outer knee pain" onClick={() => handleSelect("lateral")}>
+              Outer
+            </button>
+          </div>
         </div>
       </div>
     </section>
