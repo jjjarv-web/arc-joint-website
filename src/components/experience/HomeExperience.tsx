@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
@@ -14,6 +14,26 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 type AssessmentStep = "knee" | "duration" | "status" | "zip";
 type PainRegion = KneePainRegion | "";
 
+function getPersonalizedMessage(status: string, duration?: string): { headline: string; subtext: string } {
+  if (status.includes("scheduled") || status.includes("waiting")) {
+    return {
+      headline: "Surgery isn't the only path.",
+      subtext: "Find ARC providers near you.",
+    };
+  }
+  if (status.includes("considering")) {
+    return {
+      headline: "You're in the right place.",
+      subtext: "Find providers near you.",
+    };
+  }
+  const isEarly = duration?.toLowerCase().includes("less than 6");
+  return {
+    headline: isEarly ? "Catching it early can open options." : "Exploring early can open options.",
+    subtext: "Find providers near you.",
+  };
+}
+
 export function HomeExperience() {
   const [exploreOpen, setExploreOpen] = useState(false);
   const [step, setStep] = useState<AssessmentStep>("knee");
@@ -24,10 +44,14 @@ export function HomeExperience() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [providerZip, setProviderZip] = useState("");
+  const [providerLoading, setProviderLoading] = useState(false);
+  const [providerError, setProviderError] = useState("");
+  const [providerResults, setProviderResults] = useState<SearchResult[]>([]);
   const container = useRef<HTMLDivElement>(null);
   const productSectionRef = useRef<HTMLElement>(null);
   const kneeSectionRef = useRef<HTMLDivElement>(null);
-  const assessmentStepsRef = useRef<HTMLDivElement>(null);
+  const assessmentPanelRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -235,6 +259,10 @@ export function HomeExperience() {
   );
 
   const nearestLabel = useMemo(() => (results.length > 0 ? `${results.length} providers` : ""), [results]);
+  const providerNearestLabel = useMemo(
+    () => (providerResults.length > 0 ? `${providerResults.length} providers` : ""),
+    [providerResults]
+  );
 
   const resetAssessment = () => {
     setStep("knee");
@@ -273,13 +301,46 @@ export function HomeExperience() {
     }
   };
 
+  const runProviderSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setProviderLoading(true);
+    setProviderError("");
+    setProviderResults([]);
+    try {
+      const response = await fetch(`/api/providers/search?zip=${encodeURIComponent(providerZip)}`);
+      const data = (await response.json()) as { error?: string; results?: SearchResult[] };
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to search providers right now.");
+      }
+      setProviderResults(data.results || []);
+    } catch (requestError) {
+      const message =
+        requestError instanceof Error
+          ? requestError.message
+          : "Unexpected issue while searching providers.";
+      setProviderError(message);
+    } finally {
+      setProviderLoading(false);
+    }
+  };
+
   const handlePainSelection = (region: KneePainRegion) => {
     setPainRegion(region);
     setStep("duration");
-    requestAnimationFrame(() => {
-      assessmentStepsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
   };
+
+  useEffect(() => {
+    if (step === "knee" || !assessmentPanelRef.current) {
+      return;
+    }
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const duration = prefersReducedMotion ? 0 : 0.35;
+    gsap.fromTo(
+      assessmentPanelRef.current,
+      { autoAlpha: 0 },
+      { autoAlpha: 1, duration, ease: "power2.out" }
+    );
+  }, [step]);
 
   return (
     <main ref={container} className="relative bg-white text-[#111111]">
@@ -404,149 +465,267 @@ export function HomeExperience() {
         </div>
       </section>
 
-      <div ref={kneeSectionRef} className="relative z-30 bg-black">
-        <KneeSelector selectedRegion={painRegion} onSelect={handlePainSelection} />
+      <div ref={kneeSectionRef} className="relative z-30 min-h-screen bg-black">
+        <KneeSelector
+          selectedRegion={painRegion}
+          onSelect={handlePainSelection}
+          visible={step === "knee"}
+        />
+        {step !== "knee" && (
+          <div
+            ref={assessmentPanelRef}
+            className="assessment-panel pointer-events-auto fixed inset-0 z-[35] flex flex-col items-center justify-center bg-black px-6 py-12"
+          >
+            <div className="mx-auto w-full max-w-lg">
+              <p className="mb-4 text-center text-[11px] uppercase tracking-[0.18em] text-white/70">
+                Step {step === "duration" ? 2 : step === "status" ? 3 : 4} of 4
+              </p>
+              <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm md:p-8">
+                {step === "duration" && (
+                  <>
+                    <p className="mb-5 text-2xl font-light text-white/94 md:text-3xl">
+                      How long has it been present?
+                    </p>
+                    <div className="space-y-3">
+                      {["Less than 6 months", "6 to 24 months", "More than 2 years"].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            setDuration(value);
+                            setStep("status");
+                          }}
+                          className="w-full rounded-xl border border-white/20 px-5 py-4 text-left text-white/90 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {step === "status" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setStep("duration")}
+                      className="mb-4 text-sm text-white/60 underline hover:text-white/80"
+                    >
+                      Back
+                    </button>
+                    <p className="mb-5 text-2xl font-light text-white/94 md:text-3xl">
+                      Have you been told you need replacement?
+                    </p>
+                    <div className="space-y-3">
+                      {[
+                        "Yes, it is scheduled",
+                        "Yes, but I am waiting",
+                        "Not yet",
+                        "I am considering options",
+                      ].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => {
+                            setReplacementStatus(value);
+                            setStep("zip");
+                          }}
+                          className="w-full rounded-xl border border-white/20 px-5 py-4 text-left text-white/90 transition-colors hover:bg-white/10 hover:text-white"
+                        >
+                          {value}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {step === "zip" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setStep("status")}
+                      className="mb-4 text-sm text-white/60 underline hover:text-white/80"
+                    >
+                      Back
+                    </button>
+                    {(() => {
+                      const { headline, subtext } = getPersonalizedMessage(replacementStatus, duration);
+                      return (
+                        <>
+                          <p className="text-xl font-light text-white/80 md:text-2xl">{headline}</p>
+                          <p className="mt-2 text-3xl font-medium text-white/94 md:text-4xl">{subtext}</p>
+                        </>
+                      );
+                    })()}
+                    <form className="mt-8" onSubmit={runSearch}>
+                      <label className="sr-only" htmlFor="zip-input">
+                        Enter ZIP code
+                      </label>
+                      <input
+                        id="zip-input"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="\d{5}"
+                        maxLength={5}
+                        value={zip}
+                        onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
+                        placeholder="Enter ZIP code"
+                        className="w-full border-b-2 border-white/30 bg-transparent py-3 text-4xl font-light tracking-tight text-white outline-none placeholder:text-white/40 md:text-5xl"
+                      />
+                      <button
+                        type="submit"
+                        disabled={zip.length !== 5 || loading}
+                        className="mt-5 rounded-full border border-white/30 px-6 py-2.5 text-white/90 transition-colors hover:bg-white/10 disabled:opacity-40"
+                      >
+                        {loading ? "Searching..." : "Search"}
+                      </button>
+                    </form>
+                  </>
+                )}
+              </div>
+
+              {error && <p className="mt-4 text-center text-sm text-red-400">{error}</p>}
+
+              {results.length > 0 && (
+                <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm md:p-8">
+                  <div className="mb-5 flex items-center justify-between">
+                    <p className="text-xl font-light text-white/94">
+                      Providers near <span className="font-medium">{zip}</span>
+                    </p>
+                    <p className="text-sm text-white/60">{nearestLabel}</p>
+                  </div>
+                  <ul className="space-y-3">
+                    {results.map((provider) => (
+                      <li
+                        key={provider.id}
+                        className="rounded-xl border border-white/15 px-5 py-4"
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <p className="text-lg text-white/94">{provider.name}</p>
+                          <Link
+                            href={`/providers/${provider.slug}`}
+                            className="rounded-full border border-white/30 px-3 py-1 text-xs uppercase tracking-[0.1em] text-white/90 hover:bg-white/10"
+                          >
+                            View
+                          </Link>
+                        </div>
+                        <p className="text-sm text-white/60">
+                          {provider.city}, {provider.state} • {provider.distanceMiles.toFixed(1)} mi
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/providers"
+                    className="mt-5 inline-block text-sm text-white/70 underline hover:text-white/90"
+                  >
+                    See all providers
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
-      <section className="relative z-20 min-h-screen bg-[#f6f6f6] px-6 py-24">
-        <div className="mx-auto w-full max-w-4xl">
-          <div data-reveal className="mb-12 text-center">
-            <h3 className="text-[clamp(44px,6vw,72px)] font-semibold leading-none">Let&apos;s see where you are.</h3>
-            <button
-              type="button"
-              onClick={() => {
-                resetAssessment();
-                requestAnimationFrame(() => {
-                  kneeSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-                });
-              }}
-              className="mt-6 border-b border-black pb-1 text-lg"
-            >
-              Begin Assessment
-            </button>
-          </div>
+      <section className="relative z-20 flex min-h-[75vh] flex-col items-center justify-center bg-[#f7f7f7] px-6">
+        <div data-reveal className="mx-auto w-full max-w-4xl text-center">
+          <h3 className="text-[clamp(44px,6vw,72px)] font-semibold leading-tight text-black">
+            Let&apos;s see where you
+            <br />
+            are.
+          </h3>
+          <button
+            type="button"
+            onClick={() => {
+              resetAssessment();
+              requestAnimationFrame(() => {
+                const trigger = kneeSectionRef.current;
+                if (!trigger) return;
+                const rect = trigger.getBoundingClientRect();
+                const scrollY = window.scrollY ?? document.documentElement.scrollTop;
+                const triggerTop = rect.top + scrollY;
+                const targetScroll = triggerTop + 3.6 * window.innerHeight;
+                window.scrollTo({ top: targetScroll, behavior: "smooth" });
+              });
+            }}
+            className="mt-8 text-base font-semibold text-black transition-opacity hover:opacity-70"
+          >
+            Begin Assessment
+            <span className="ml-1" aria-hidden="true">&gt;</span>
+          </button>
+        </div>
+      </section>
 
-          {step !== "knee" && (
-            <div ref={assessmentStepsRef} data-reveal className="space-y-8">
-                <div className="rounded-2xl border border-black/10 bg-white p-8">
-                  {step === "duration" && (
-                    <>
-                      <p className="mb-5 text-3xl font-light">How long has it been present?</p>
-                      <div className="space-y-3">
-                        {["Less than 6 months", "6 to 24 months", "More than 2 years"].map((value) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => {
-                              setDuration(value);
-                              setStep("status");
-                            }}
-                            className="w-full rounded-xl border border-black/15 px-5 py-4 text-left hover:bg-black hover:text-white"
-                          >
-                            {value}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {step === "status" && (
-                    <>
-                      <p className="mb-5 text-3xl font-light">Have you been told you need replacement?</p>
-                      <div className="space-y-3">
-                        {[
-                          "Yes, it is scheduled",
-                          "Yes, but I am waiting",
-                          "Not yet",
-                          "I am considering options",
-                        ].map((value) => (
-                          <button
-                            key={value}
-                            type="button"
-                            onClick={() => {
-                              setReplacementStatus(value);
-                              setStep("zip");
-                            }}
-                            className="w-full rounded-xl border border-black/15 px-5 py-4 text-left hover:bg-black hover:text-white"
-                          >
-                            {value}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-
-                  {step === "zip" && (
-                    <>
-                      <p className="text-2xl font-light text-black/58">You may not be out of options.</p>
-                      <p className="mt-2 text-4xl font-medium">Find your ARC provider.</p>
-                      <form className="mt-8" onSubmit={runSearch}>
-                        <label className="sr-only" htmlFor="zip-input">
-                          Enter ZIP code
-                        </label>
-                        <input
-                          id="zip-input"
-                          type="text"
-                          inputMode="numeric"
-                          pattern="\d{5}"
-                          maxLength={5}
-                          value={zip}
-                          onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
-                          placeholder="Enter ZIP code"
-                          className="w-full border-b-2 border-black/20 bg-transparent py-3 text-5xl font-light tracking-tight outline-none placeholder:text-black/20"
-                        />
-                        <button
-                          type="submit"
-                          disabled={zip.length !== 5 || loading}
-                          className="mt-5 rounded-full border border-black/20 px-6 py-2 disabled:opacity-40"
-                        >
-                          {loading ? "Searching..." : "Search"}
-                        </button>
-                      </form>
-                    </>
-                  )}
-                </div>
-
-                {(painRegion || duration || replacementStatus) && (
-                  <p className="text-sm text-black/45">
-                    Captured state: {painRegion || "n/a"} • {duration || "n/a"} •{" "}
-                    {replacementStatus || "n/a"}
-                  </p>
-                )}
-
-                {error && <p className="text-sm text-red-600">{error}</p>}
-
-                {results.length > 0 && (
-                  <div className="rounded-2xl border border-black/10 bg-white p-8">
-                    <div className="mb-5 flex items-center justify-between">
-                      <p className="text-2xl font-light">
-                        Providers near <span className="font-medium">{zip}</span>
-                      </p>
-                      <p className="text-sm text-black/45">{nearestLabel}</p>
+      <section className="relative z-20 flex flex-col items-center justify-center bg-white px-6 py-20">
+        <div className="mx-auto w-full max-w-2xl text-center">
+          <h3 className="text-xs font-normal tracking-[0.18em] text-black/35">
+            Find a provider near you
+          </h3>
+          <form onSubmit={runProviderSearch} className="mt-5">
+            <div className="group inline-flex items-center gap-3 rounded-full border border-black/5 bg-white/95 px-5 py-3 shadow-[0_6px_18px_rgba(0,0,0,0.08),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(0,0,0,0.14),0_1px_0_rgba(255,255,255,0.95)_inset]">
+              <label htmlFor="provider-zip" className="sr-only">
+                Enter ZIP code
+              </label>
+              <input
+                id="provider-zip"
+                type="text"
+                inputMode="numeric"
+                pattern="\d{5}"
+                maxLength={5}
+                value={providerZip}
+                onChange={(e) => setProviderZip(e.target.value.replace(/\D/g, ""))}
+                placeholder="ZIP code"
+                className="w-24 bg-transparent text-[15px] font-medium tracking-tight text-black outline-none placeholder:text-black/40"
+              />
+              <button
+                type="submit"
+                disabled={providerZip.length !== 5 || providerLoading}
+                className="flex items-center gap-1.5 text-[15px] font-medium tracking-tight text-black transition-opacity hover:opacity-70 disabled:opacity-40"
+              >
+                {providerLoading ? "Searching…" : "Find"}
+                <span aria-hidden="true">&gt;</span>
+              </button>
+            </div>
+          </form>
+          {providerError && (
+            <p className="mt-4 text-sm text-red-500">{providerError}</p>
+          )}
+          {providerResults.length > 0 && (
+            <div className="mt-8 rounded-2xl border border-black/8 bg-white/80 p-6 text-left backdrop-blur-sm">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-lg font-medium text-black">
+                  Providers near <span className="font-semibold">{providerZip}</span>
+                </p>
+                <p className="text-sm text-black/55">{providerNearestLabel}</p>
+              </div>
+              <ul className="space-y-3">
+                {providerResults.map((provider) => (
+                  <li
+                    key={provider.id}
+                    className="rounded-xl border border-black/8 px-5 py-4"
+                  >
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="font-medium text-black">{provider.name}</p>
+                      <Link
+                        href={`/providers/${provider.slug}`}
+                        className="rounded-full border border-black/15 px-3 py-1 text-xs uppercase tracking-[0.1em] text-black/90 transition-colors hover:bg-black/5"
+                      >
+                        View
+                      </Link>
                     </div>
-                    <ul className="space-y-3">
-                      {results.map((provider) => (
-                        <li key={provider.id} className="rounded-xl border border-black/10 px-5 py-4">
-                          <div className="flex items-center justify-between gap-4">
-                            <p className="text-xl">{provider.name}</p>
-                            <Link
-                              href={`/providers/${provider.slug}`}
-                              className="rounded-full border border-black/20 px-3 py-1 text-xs uppercase tracking-[0.1em]"
-                            >
-                              View
-                            </Link>
-                          </div>
-                          <p className="text-sm text-black/50">
-                            {provider.city}, {provider.state} • {provider.distanceMiles.toFixed(1)} mi
-                          </p>
-                        </li>
-                      ))}
-                    </ul>
-                    <Link href="/providers" className="mt-5 inline-block text-sm text-black/55 underline">
-                      See all providers
-                    </Link>
-                  </div>
-                )}
+                    <p className="mt-1 text-sm text-black/55">
+                      {provider.city}, {provider.state} • {provider.distanceMiles.toFixed(1)} mi
+                    </p>
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/providers"
+                className="mt-4 inline-block text-sm text-black/70 underline hover:text-black/90"
+              >
+                See all providers
+              </Link>
             </div>
           )}
         </div>

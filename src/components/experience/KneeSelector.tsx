@@ -13,6 +13,7 @@ export type KneePainRegion = "anterior" | "medial" | "lateral";
 interface KneeSelectorProps {
   selectedRegion: KneePainRegion | "";
   onSelect: (region: KneePainRegion) => void;
+  visible?: boolean;
 }
 
 const TRUST_HEADLINE = "Performed by Orthopedic and Neurosurgeons in select medical centers";
@@ -29,7 +30,7 @@ const KNEE_Y = 0.675;
 const SOFT_GATE_MS = 2400;
 type KneeSide = "left" | "right";
 
-export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
+export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeSelectorProps) {
   const sectionRef = useRef<HTMLElement>(null);
   const interactionFieldRef = useRef<HTMLDivElement>(null);
   const pulseTimeoutRef = useRef<number | null>(null);
@@ -129,7 +130,7 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
         scrollTrigger: {
           trigger: sectionRef.current,
           start: "top top",
-          end: "+=420%",
+          end: "+=360%",
           scrub: 0.85,
           pin: stageElement,
           anticipatePin: 1,
@@ -313,6 +314,18 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
     []
   );
 
+  useEffect(() => {
+    if (!sectionRef.current || visible) {
+      return;
+    }
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const duration = prefersReducedMotion ? 0 : 0.35;
+    gsap.to(
+      [".knee-image-shell", ".knee-headline", ".knee-step-label", ".knee-zone-hint", ".knee-interaction-field", ".knee-trust-copy"],
+      { autoAlpha: 0, duration, ease: "power2.out", overwrite: "auto" }
+    );
+  }, [visible]);
+
   const handleSelect = (region: KneePainRegion) => {
     if (!interactiveRef.current || clickLockRef.current) {
       return;
@@ -389,7 +402,7 @@ export function KneeSelector({ selectedRegion, onSelect }: KneeSelectorProps) {
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-[520vh] bg-black text-white">
+    <section ref={sectionRef} className="relative min-h-[460vh] bg-black text-white">
       <div className="knee-stage relative h-screen overflow-hidden px-6 py-[9vh] md:px-10">
         <div className="knee-light-field pointer-events-none absolute inset-0 z-[1] will-change-[opacity]">
           <div className="absolute left-1/2 top-[58%] h-[340px] w-[460px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(156,196,232,0.12)_0%,_rgba(72,112,150,0.08)_34%,_rgba(0,0,0,0)_72%)] md:h-[420px] md:w-[560px]" />
