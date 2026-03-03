@@ -202,19 +202,25 @@ export function HomeExperience() {
         }
       );
 
-      gsap.fromTo(
-        ".product-copy",
-        { autoAlpha: 0, x: 86 },
-        {
-          autoAlpha: 1,
-          x: 0,
-          duration: 1.95,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: ".product-headline",
-            start: "bottom 92%",
-            toggleActions: "play none none reverse",
-          },
+      const productCopyMedia = gsap.matchMedia();
+      productCopyMedia.add(
+        { isMobile: "(max-width: 767px)", isDesktop: "(min-width: 768px)" },
+        (context) => {
+          const conditions = context.conditions as { isMobile: boolean; isDesktop: boolean };
+          const from = conditions.isMobile
+            ? { autoAlpha: 0, y: 16 }
+            : { autoAlpha: 0, x: 86 };
+          const to = conditions.isMobile
+            ? { autoAlpha: 1, y: 0, duration: 1.95, ease: "power3.out" }
+            : { autoAlpha: 1, x: 0, duration: 1.95, ease: "power3.out" };
+          gsap.fromTo(".product-copy", from, {
+            ...to,
+            scrollTrigger: {
+              trigger: ".product-headline",
+              start: "bottom 92%",
+              toggleActions: "play none none reverse",
+            },
+          });
         }
       );
 
@@ -263,7 +269,10 @@ export function HomeExperience() {
         }
       );
 
-      return () => handoffMedia.revert();
+      return () => {
+        productCopyMedia.revert();
+        handoffMedia.revert();
+      };
     },
     { scope: container }
   );
@@ -471,11 +480,11 @@ export function HomeExperience() {
         <div className="product-dim-overlay pointer-events-none absolute inset-0 bg-black opacity-0" />
         <div className="mx-auto grid w-full max-w-6xl items-center gap-14 md:grid-cols-2">
           <div
-            className="product-visual flex aspect-square items-center justify-center rounded-3xl bg-[#f4f4f4] text-xs uppercase tracking-[0.28em] text-black/20"
+            className="product-visual order-2 flex aspect-square items-center justify-center rounded-3xl bg-[#f4f4f4] text-xs uppercase tracking-[0.28em] text-black/20 md:order-1"
           >
             Rotating knee placeholder
           </div>
-          <div className="product-copy">
+          <div className="product-copy order-1 md:order-2">
             <h3 className="product-headline text-[clamp(40px,6vw,76px)] font-semibold leading-none">
               Peripheral
               <br />

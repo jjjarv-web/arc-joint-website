@@ -104,6 +104,7 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         filter: "blur(5px)",
         color: "rgba(154,162,176,0.36)",
       });
+      gsap.set(".knee-trust-emphasis", { color: "rgba(130,142,165,0.4)" });
       gsap.set(".knee-spec", { autoAlpha: 0, y: 16 });
       gsap.set(".knee-trust-copy", { autoAlpha: 1 });
       gsap.set(".knee-step-label", { autoAlpha: 0, y: 8 });
@@ -183,6 +184,17 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
           scrub: 1.1,
         },
       });
+      // Emphasis words animate in with a slightly later curve so they "pop" into focus.
+      gsap.to(".knee-trust-emphasis", {
+        color: "rgba(255,255,255,1)",
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: sectionRef.current,
+          start: "top 72%",
+          end: "top top",
+          scrub: 1.2,
+        },
+      });
 
       // 0.00-0.15 calibration, 0.15-0.40 trust lock.
       stageTimeline
@@ -197,6 +209,7 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
           },
           0
         )
+        .set(".knee-trust-emphasis", { color: "rgba(255,255,255,1)" }, 0)
         .to(".knee-light-field", { autoAlpha: 0.82, duration: 0.15 }, 0)
         // Smooth trust headline handoff into specs.
         .to(".knee-trust-headline", { autoAlpha: 0, y: -10, scale: 0.95, duration: 0.22 }, 0.12)
@@ -417,9 +430,9 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
           <div className="knee-trust-copy pointer-events-none absolute left-1/2 top-[26%] w-full max-w-5xl -translate-x-1/2 px-4 text-center">
             <p className="knee-trust-headline relative text-balance text-[clamp(34px,5.2vw,72px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white/94 [text-shadow:0_0_34px_rgba(145,180,220,0.1)]">
               Performed by{" "}
-              <span className="font-semibold text-white">Orthopedic</span>
+              <span className="knee-trust-emphasis font-bold text-white [text-shadow:0_0_20px_rgba(255,255,255,0.1)]">Orthopedic</span>
               {" "}and{" "}
-              <span className="font-semibold text-white">Neurosurgeons</span>
+              <span className="knee-trust-emphasis font-bold text-white [text-shadow:0_0_20px_rgba(255,255,255,0.1)]">Neurosurgeons</span>
               {" "}in select medical centers
             </p>
             <p className="sr-only">
