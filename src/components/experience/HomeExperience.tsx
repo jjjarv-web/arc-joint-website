@@ -499,180 +499,278 @@ export function HomeExperience() {
         {step !== "knee" && (
           <div
             ref={assessmentPanelRef}
-            className="assessment-panel pointer-events-auto fixed inset-0 z-[35] flex flex-col items-center justify-center bg-black px-6 py-12"
+            className="assessment-panel pointer-events-auto fixed inset-0 z-[35] flex flex-col items-center justify-center overflow-y-auto bg-[#111111] px-6 py-12"
           >
             <div className="mx-auto w-full max-w-lg">
-              <p className="mb-4 text-center text-[11px] uppercase tracking-[0.18em] text-white/70">
-                Step {step === "duration" ? 2 : step === "status" ? 3 : 4} of 4
-              </p>
-              <div className="rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm md:p-8">
-                {step === "duration" && (
-                  <>
-                    <p className="mb-5 text-2xl font-light text-white/94 md:text-3xl">
-                      How long has it been present?
-                    </p>
-                    <div className="space-y-3">
-                      {["Less than 6 months", "6 to 24 months", "More than 2 years"].map((value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            setDuration(value);
-                            setStep("status");
-                          }}
-                          className="w-full rounded-xl border border-white/20 px-5 py-4 text-left text-white/90 transition-colors hover:bg-white/10 hover:text-white"
-                        >
-                          {value}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
 
-                {step === "status" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setStep("duration")}
-                      className="mb-4 text-sm text-white/60 underline hover:text-white/80"
-                    >
-                      Back
-                    </button>
-                    <p className="mb-5 text-2xl font-light text-white/94 md:text-3xl">
-                      Has a doctor recommended knee replacement?
+              {/* Steps 2 & 3: shared card with step indicator */}
+              {(step === "duration" || step === "status") && (
+                <>
+                  <div className="mb-5">
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/55">
+                      Step {step === "duration" ? 2 : 3} of 4
                     </p>
-                    <div className="space-y-3">
-                      {[
-                        "Yes, it is scheduled",
-                        "Yes, but I am waiting",
-                        "Not yet",
-                        "Had a replacement — still in pain",
-                      ].map((value) => (
-                        <button
-                          key={value}
-                          type="button"
-                          onClick={() => {
-                            setReplacementStatus(value);
-                            setStep("zip");
-                          }}
-                          className="w-full rounded-xl border border-white/20 px-5 py-4 text-left text-white/90 transition-colors hover:bg-white/10 hover:text-white"
-                        >
-                          {value}
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {step === "zip" && analyzing && (
-                  <div className="flex min-h-[12rem] flex-col items-center justify-center gap-4">
-                    <p className="animate-pulse text-[11px] uppercase tracking-[0.22em] text-white/50">
-                      Analyzing your inputs…
-                    </p>
-                    <div className="flex gap-1.5">
-                      {[0, 1, 2].map((i) => (
-                        <span
-                          key={i}
-                          className="h-1 w-1 rounded-full bg-white/30 animate-pulse"
-                          style={{ animationDelay: `${i * 0.2}s` }}
-                        />
-                      ))}
+                    <div className="mx-auto mt-2 h-px w-32 bg-white/15">
+                      <div
+                        className="h-full bg-white/50 transition-all duration-500"
+                        style={{ width: step === "duration" ? "33%" : "66%" }}
+                      />
                     </div>
                   </div>
-                )}
 
-                {step === "zip" && !analyzing && reviewVisible && (() => {
-                  const { statement, credential } = getPersonalizedReview(replacementStatus, duration);
-                  return (
-                    <div className="animate-[fadeIn_0.5s_ease-out_forwards]">
-                      <button
-                        type="button"
-                        onClick={() => setStep("status")}
-                        className="mb-5 text-sm text-white/50 underline hover:text-white/70"
-                      >
-                        Back
-                      </button>
-                      <p className="mb-2 text-[11px] uppercase tracking-[0.18em] text-white/40">
-                        Your Knee Pain Review
-                      </p>
-                      <p className="text-[17px] font-light leading-relaxed text-white/90 md:text-lg">
-                        {statement}
-                      </p>
-                      <p className="mt-4 text-[15px] font-light leading-relaxed text-white/60 md:text-base">
-                        {credential}
-                      </p>
-                      <div className="mt-8 border-t border-white/10 pt-7">
-                        <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-white/40">
-                          Find a center near you
+                  <div className="rounded-2xl border border-white/[0.18] bg-white/[0.07] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm md:p-8">
+                    {step === "duration" && (
+                      <>
+                        <p className="mb-5 text-2xl font-light tracking-tight text-white">
+                          How long has it been present?
                         </p>
-                        <form onSubmit={runSearch}>
-                          <label className="sr-only" htmlFor="zip-input">
-                            Enter ZIP code
-                          </label>
-                          <input
-                            id="zip-input"
-                            type="text"
-                            inputMode="numeric"
-                            pattern="\d{5}"
-                            maxLength={5}
-                            value={zip}
-                            onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
-                            placeholder="ZIP code"
-                            className="w-full border-b border-white/25 bg-transparent pb-3 text-3xl font-light tracking-tight text-white outline-none placeholder:text-white/30 md:text-4xl"
-                          />
-                          <button
-                            type="submit"
-                            disabled={zip.length !== 5 || loading}
-                            className="mt-5 rounded-full border border-white/25 px-6 py-2.5 text-sm font-medium text-white/90 transition-colors hover:bg-white/10 disabled:opacity-40"
-                          >
-                            {loading ? "Searching…" : "Find Providers"}
-                          </button>
-                        </form>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-
-              {error && <p className="mt-4 text-center text-sm text-red-400">{error}</p>}
-
-              {results.length > 0 && (
-                <div className="mt-6 rounded-2xl border border-white/15 bg-white/5 p-6 backdrop-blur-sm md:p-8">
-                  <div className="mb-5 flex items-center justify-between">
-                    <p className="text-xl font-light text-white/94">
-                      Providers near <span className="font-medium">{zip}</span>
-                    </p>
-                    <p className="text-sm text-white/60">{nearestLabel}</p>
-                  </div>
-                  <ul className="space-y-3">
-                    {results.map((provider) => (
-                      <li
-                        key={provider.id}
-                        className="rounded-xl border border-white/15 px-5 py-4"
-                      >
-                        <div className="flex items-center justify-between gap-4">
-                          <p className="text-lg text-white/94">{provider.name}</p>
-                          <Link
-                            href={`/providers/${provider.slug}`}
-                            className="rounded-full border border-white/30 px-3 py-1 text-xs uppercase tracking-[0.1em] text-white/90 hover:bg-white/10"
-                          >
-                            View
-                          </Link>
+                        <div className="space-y-2.5">
+                          {["Less than 6 months", "6 to 24 months", "More than 2 years"].map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => {
+                                setDuration(value);
+                                setStep("status");
+                              }}
+                              className="group flex w-full items-center justify-between rounded-xl border border-white/[0.15] bg-white/[0.06] px-5 py-4 text-left text-white/90 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.12] hover:text-white active:scale-[0.98]"
+                            >
+                              <span className="text-[18px] font-light">{value}</span>
+                              <span className="text-white/40 transition-colors group-hover:text-white/70" aria-hidden="true">›</span>
+                            </button>
+                          ))}
                         </div>
-                        <p className="text-sm text-white/60">
-                          {provider.city}, {provider.state} • {provider.distanceMiles.toFixed(1)} mi
+                      </>
+                    )}
+
+                    {step === "status" && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setStep("duration")}
+                          className="mb-5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/55 transition-colors hover:text-white/80"
+                        >
+                          <span aria-hidden="true">←</span> Back
+                        </button>
+                        <p className="mb-5 text-2xl font-light tracking-tight text-white">
+                          Has a doctor recommended knee replacement?
                         </p>
-                      </li>
+                        <div className="space-y-2.5">
+                          {[
+                            "Yes, it is scheduled",
+                            "Yes, but I am waiting",
+                            "Not yet",
+                            "Had a replacement — still in pain",
+                          ].map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              onClick={() => {
+                                setReplacementStatus(value);
+                                setStep("zip");
+                              }}
+                              className="group flex w-full items-center justify-between rounded-xl border border-white/[0.15] bg-white/[0.06] px-5 py-4 text-left text-white/90 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.12] hover:text-white active:scale-[0.98]"
+                            >
+                              <span className="text-[18px] font-light">{value}</span>
+                              <span className="text-white/40 transition-colors group-hover:text-white/70" aria-hidden="true">›</span>
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {/* Step 4: analyzing phase — centered, no card */}
+              {step === "zip" && analyzing && (
+                <div className="flex flex-col items-center justify-center gap-5 py-16">
+                  <p className="animate-pulse text-[12px] uppercase tracking-[0.22em] text-white/60">
+                    Analyzing your inputs…
+                  </p>
+                  <div className="flex gap-2">
+                    {[0, 1, 2].map((i) => (
+                      <span
+                        key={i}
+                        className="h-1.5 w-1.5 rounded-full bg-white/40 animate-pulse"
+                        style={{ animationDelay: `${i * 0.25}s` }}
+                      />
                     ))}
-                  </ul>
-                  <Link
-                    href="/providers"
-                    className="mt-5 inline-block text-sm text-white/70 underline hover:text-white/90"
-                  >
-                    See all providers
-                  </Link>
+                  </div>
                 </div>
               )}
+
+              {step === "zip" && !analyzing && reviewVisible && (() => {
+                const { statement, credential } = getPersonalizedReview(replacementStatus, duration);
+                return (
+                  <div className="w-full">
+                    {/* Back */}
+                    <button
+                      type="button"
+                      onClick={() => setStep("status")}
+                      style={{ opacity: 0, animation: "fadeIn 0.4s ease-out 0.1s forwards" }}
+                      className="mb-8 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
+                    >
+                      <span aria-hidden="true">←</span> Back
+                    </button>
+
+                    {/* Label */}
+                    <p
+                      style={{ opacity: 0, animation: "fadeIn 0.5s ease-out 0.2s forwards" }}
+                      className="mb-3 text-[11px] uppercase tracking-[0.26em] text-white/50"
+                    >
+                      Your Knee Pain Review
+                    </p>
+
+                    {/* Statement — the hero reveal */}
+                    <p
+                      style={{ opacity: 0, animation: "fadeIn 0.9s ease-out 0.35s forwards" }}
+                      className="text-[22px] font-light leading-[1.48] tracking-tight text-white md:text-[24px]"
+                    >
+                      {statement}
+                    </p>
+
+                    {/* Credential — follows after */}
+                    <p
+                      style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 0.85s forwards" }}
+                      className="mt-5 text-[16px] font-light leading-relaxed text-white/65 md:text-[17px]"
+                    >
+                      {credential}
+                    </p>
+
+                    {/* Divider — transition into action */}
+                    <div
+                      style={{ opacity: 1, animation: "drawLine 0.9s ease-out 2.0s both" }}
+                      className="my-10 h-px w-full origin-left bg-white/[0.1]"
+                    />
+
+                    {/* ZIP section */}
+                    <div style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 3.2s forwards" }}>
+                      <p className="mb-2 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
+                        Enter your ZIP to find a provider near you.
+                      </p>
+
+                      <form onSubmit={runSearch}>
+                        {/* ZIP input with traveling border light */}
+                        <div className="relative overflow-hidden rounded-2xl p-px">
+                          {/* Spinning border light */}
+                          <div
+                            className="absolute inset-[-100%]"
+                            style={{
+                              background: "conic-gradient(from 0deg, transparent 0deg, transparent 120deg, rgba(138,210,255,0.55) 180deg, rgba(255,255,255,0.3) 200deg, rgba(138,210,255,0.55) 220deg, transparent 280deg, transparent 360deg)",
+                              animation: "borderSpin 3.5s linear infinite",
+                            }}
+                          />
+                          {/* Inner card */}
+                          <div
+                            className="relative rounded-[15px] px-5 py-5"
+                            style={{ backgroundColor: "#1a1a1a" }}
+                          >
+                            <label htmlFor="zip-input" className="mb-2 block text-[13px] font-light text-white/70">
+                              Enter your ZIP code
+                            </label>
+                            <div className="flex items-center gap-3">
+                              <input
+                                id="zip-input"
+                                type="text"
+                                inputMode="numeric"
+                                pattern="\d{5}"
+                                maxLength={5}
+                                value={zip}
+                                autoFocus
+                                onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
+                                placeholder="e.g. 90210"
+                                className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/25 md:text-[24px]"
+                              />
+                              {/* Live digit count */}
+                              <span className="shrink-0 text-[12px] tabular-nums text-white/50">
+                                {zip.length}/5
+                              </span>
+                            </div>
+                            {/* Digit fill bar */}
+                            <div className="mt-3 h-px w-full rounded-full bg-white/10">
+                              <div
+                                className="h-full rounded-full transition-all duration-200"
+                                style={{
+                                  width: `${(zip.length / 5) * 100}%`,
+                                  backgroundColor: zip.length === 5 ? "rgba(138,210,255,0.8)" : "rgba(138,210,255,0.4)",
+                                  boxShadow: zip.length > 0 ? "0 0 6px rgba(138,210,255,0.5)" : "none",
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Submit */}
+                        <button
+                          type="submit"
+                          disabled={zip.length !== 5 || loading}
+                          className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98]"
+                          style={{
+                            backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
+                            color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
+                            boxShadow: zip.length === 5 ? "0 0 50px rgba(138,210,255,0.18), 0 0 20px rgba(255,255,255,0.1)" : "none",
+                            animation: zip.length === 5 ? "subtlePulse 0.4s ease-out" : "none",
+                          }}
+                        >
+                          {loading ? (
+                            <span className="inline-flex items-center justify-center gap-2">
+                              <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
+                              Searching…
+                            </span>
+                          ) : "Show Providers Near Me"}
+                        </button>
+
+                      </form>
+
+                      {/* Social proof — below form, above results */}
+                      {results.length === 0 && !loading && (
+                        <p className="mt-4 text-center text-[12px] font-light text-white/45">
+                          Used by patients across the country to find ARC-trained providers.
+                        </p>
+                      )}
+
+                      {error && <p className="mt-4 text-center text-sm text-red-400/70">{error}</p>}
+
+                      {results.length > 0 && (
+                        <div className="mt-6 animate-[fadeIn_0.5s_ease-out_forwards]">
+                          <div className="mb-3 flex items-center justify-between">
+                            <p className="text-[10px] uppercase tracking-[0.22em] text-white/55">Near {zip}</p>
+                            <p className="text-[10px] text-white/40">{nearestLabel}</p>
+                          </div>
+                          <ul className="space-y-2">
+                            {results.map((provider) => (
+                              <li
+                                key={provider.id}
+                                className="group flex items-center justify-between rounded-xl border border-white/[0.1] bg-white/[0.05] px-5 py-4 transition-all duration-200 hover:border-white/[0.18] hover:bg-white/[0.09]"
+                              >
+                                <div>
+                                  <p className="text-[15px] font-light text-white">{provider.name}</p>
+                                  <p className="mt-0.5 text-[12px] text-white/60">
+                                    {provider.city}, {provider.state} · {provider.distanceMiles.toFixed(1)} mi
+                                  </p>
+                                </div>
+                                <Link
+                                  href={`/providers/${provider.slug}`}
+                                  className="ml-4 shrink-0 text-[11px] uppercase tracking-[0.12em] text-white/55 transition-colors group-hover:text-white/90"
+                                >
+                                  View →
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                          <Link
+                            href="/providers"
+                            className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
+                          >
+                            See all providers →
+                          </Link>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -681,9 +779,9 @@ export function HomeExperience() {
       <section className="relative z-20 flex min-h-[75vh] flex-col items-center justify-center bg-[#f7f7f7] px-6">
         <div data-reveal className="mx-auto w-full max-w-4xl text-center">
           <h3 className="text-[clamp(44px,6vw,72px)] font-semibold leading-tight text-black">
-            Let&apos;s see where you
+            Let&apos;s understand
             <br />
-            are.
+            your knee pain.
           </h3>
           <button
             type="button"
