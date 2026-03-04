@@ -17,7 +17,6 @@ interface KneeSelectorProps {
 }
 
 const TRUST_HEADLINE = "Performed by Orthopedic and Neurosurgeons in select medical centers";
-const TRUST_SPECS = ["Minimally Invasive.", "Reversible.", "Covered by Insurance."];
 const regionLabel: Record<KneePainRegion, string> = {
   anterior: "Front (anterior)",
   medial: "Inner (medial)",
@@ -38,6 +37,10 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
   const clickLockRef = useRef(false);
   const interactiveRef = useRef(false);
   const gateTriggeredRef = useRef(false);
+  const pulseTweensRef = useRef<{ left: gsap.core.Tween; right: gsap.core.Tween } | null>(null);
+  const stageTimelineRef = useRef<gsap.core.Timeline | null>(null);
+  const hasPlayedRef = useRef(false);
+  const autoplayDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [interactive, setInteractive] = useState(false);
   const [softGateActive, setSoftGateActive] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -79,6 +82,11 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       clickLockRef.current = false;
       interactiveRef.current = reducedMotion;
       gateTriggeredRef.current = false;
+      hasPlayedRef.current = false;
+      if (autoplayDelayRef.current) {
+        clearTimeout(autoplayDelayRef.current);
+        autoplayDelayRef.current = null;
+      }
       setInteractive(reducedMotion);
       setSoftGateActive(false);
 
@@ -96,6 +104,7 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         return;
       }
 
+      // Initial states — all body/text elements hidden, trust headline ready for scrub.
       gsap.set(".knee-light-field", { autoAlpha: 0.54 });
       gsap.set(".knee-trust-headline", {
         autoAlpha: 0.34,
@@ -105,7 +114,6 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         color: "rgba(154,162,176,0.36)",
       });
       gsap.set(".knee-trust-emphasis", { color: "rgba(130,142,165,0.4)" });
-      gsap.set(".knee-spec", { autoAlpha: 0, y: 16 });
       gsap.set(".knee-trust-copy", { autoAlpha: 1 });
       gsap.set(".knee-step-label", { autoAlpha: 0, y: 8 });
       gsap.set(".knee-headline", { autoAlpha: 0, y: 22, scale: 0.98 });
@@ -126,49 +134,7 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       gsap.set(".knee-interaction-field", { autoAlpha: 0.2 });
       gsap.set(".knee-light-sweep", { xPercent: -130, autoAlpha: 0.045 });
 
-      const stageTimeline = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: {
-          trigger: sectionRef.current,
-          start: "top top",
-          end: "+=360%",
-          scrub: 0.85,
-          pin: stageElement,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            const shouldEnterInteractive = !interactiveRef.current && self.progress >= 0.88;
-            const shouldExitInteractive = interactiveRef.current && self.progress <= 0.78;
-            if (shouldEnterInteractive || shouldExitInteractive) {
-              const nextInteractive = shouldEnterInteractive;
-              interactiveRef.current = nextInteractive;
-              clickLockRef.current = false;
-              setInteractive(nextInteractive);
-              if (!nextInteractive) {
-                gateTriggeredRef.current = false;
-                setSoftGateActive(false);
-                setHoverRegion("");
-                setHoverSide("");
-                if (gateTimeoutRef.current) {
-                  window.clearTimeout(gateTimeoutRef.current);
-                  gateTimeoutRef.current = null;
-                }
-              } else if (!gateTriggeredRef.current) {
-                gateTriggeredRef.current = true;
-                setSoftGateActive(true);
-                if (gateTimeoutRef.current) {
-                  window.clearTimeout(gateTimeoutRef.current);
-                }
-                gateTimeoutRef.current = window.setTimeout(() => {
-                  setSoftGateActive(false);
-                  gateTimeoutRef.current = null;
-                }, SOFT_GATE_MS);
-              }
-            }
-          },
-        },
-      });
-
-      // Entry reveal: by full viewport lock, trust headline has finished zooming to center.
+      // Phase 1 (scroll-driven, pre-pin): trust headline materializes as section scrolls to pin.
       gsap.to(".knee-trust-headline", {
         autoAlpha: 1,
         y: 0,
@@ -184,7 +150,6 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
           scrub: 1.1,
         },
       });
-      // Emphasis words animate in with a slightly later curve so they "pop" into focus.
       gsap.to(".knee-trust-emphasis", {
         color: "rgba(255,255,255,1)",
         ease: "power2.out",
@@ -196,37 +161,138 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         },
       });
 
-      // 0.00-0.15 calibration, 0.15-0.40 trust lock.
-      stageTimeline
-        .set(
-          ".knee-trust-headline",
-          {
-            autoAlpha: 1,
-            y: 0,
-            scale: 1,
-            filter: "blur(0px)",
-            color: "rgba(255,255,255,0.95)",
-          },
-          0
-        )
-        .set(".knee-trust-emphasis", { color: "rgba(255,255,255,1)" }, 0)
-        .to(".knee-light-field", { autoAlpha: 0.82, duration: 0.15 }, 0)
-        // Smooth trust headline handoff into specs.
-        .to(".knee-trust-headline", { autoAlpha: 0, y: -10, scale: 0.95, duration: 0.22 }, 0.12)
-        .to(".knee-spec", { autoAlpha: 0.94, y: 0, duration: 0.24, stagger: 0.06 }, 0.18)
-        // Clear specs fully before interaction headline enters.
-        .to(".knee-spec", { autoAlpha: 0, y: -10, duration: 0.16, stagger: 0.03 }, 0.4)
-        .to(".knee-trust-copy", { autoAlpha: 0, duration: 0.12 }, 0.48)
-        .set(".knee-trust-copy, .knee-spec", { autoAlpha: 0 }, 0.54)
-        .to(".knee-image-shell", { autoAlpha: 0.95, y: 0, scale: 1.05, rotateY: 0, filter: "blur(0px)", duration: 0.34 }, 0.5)
-        .to(".knee-figure", { scale: 0.98, yPercent: 0, duration: 0.34 }, 0.5)
-        .to(".knee-knee-glow", { autoAlpha: 1, scale: 1, duration: 0.28 }, 0.54)
-        // Click-ready headline and zones settle in and hold (one unit, no premature step label).
-        .to(".knee-step-label", { autoAlpha: 0.82, y: 0, duration: 0.2 }, 0.68)
-        .to(".knee-headline", { autoAlpha: 1, y: 0, scale: 1, color: "rgba(255,255,255,1)", duration: 0.22 }, 0.68)
-        .to(".knee-zone-hint", { autoAlpha: 0.84, duration: 0.2, stagger: 0.03 }, 0.7)
-        .to(".knee-zone-hint-core", { scale: 1, duration: 0.2, stagger: 0.03 }, 0.7)
-        .to(".knee-interaction-field", { autoAlpha: 0.94, duration: 0.2 }, 0.7);
+      // Factory: builds a fresh, paused stageTimeline each time it's needed.
+      const buildStageTimeline = () => {
+        const tl = gsap.timeline({ paused: true });
+        tl
+          .set(".knee-trust-headline", { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", color: "rgba(255,255,255,0.95)" })
+          .set(".knee-trust-emphasis", { color: "rgba(255,255,255,1)" })
+          .to(".knee-light-field", { autoAlpha: 0.82, duration: 0.5, ease: "none" }, 0)
+          .to(".knee-trust-headline", { autoAlpha: 0, y: -10, scale: 0.95, duration: 0.55, ease: "power2.in" }, 0)
+          .to(".knee-trust-copy", { autoAlpha: 0, duration: 0.45, ease: "power2.in" }, 0.1)
+          .to(".knee-image-shell", { autoAlpha: 0.95, y: 0, scale: 1.05, rotateY: 0, filter: "blur(0px)", duration: 0.9, ease: "power2.out" }, 0.3)
+          .to(".knee-figure", { scale: 0.98, yPercent: 0, duration: 0.9, ease: "power2.out" }, 0.3)
+          .to(".knee-knee-glow", { autoAlpha: 1, scale: 1, duration: 0.7, ease: "power2.out" }, 0.5)
+          .to(".knee-step-label", { autoAlpha: 0.82, y: 0, duration: 0.45, ease: "power2.out" }, 0.55)
+          .to(".knee-headline", { autoAlpha: 1, y: 0, scale: 1, color: "rgba(255,255,255,1)", duration: 0.45, ease: "power2.out" }, 0.55)
+          .to(".knee-zone-hint", { autoAlpha: 0.84, duration: 0.38, stagger: 0.06, ease: "power2.out" }, 0.6)
+          .to(".knee-zone-hint-core", { scale: 1, duration: 0.38, stagger: 0.06, ease: "power2.out" }, 0.6)
+          .to(".knee-interaction-field", { autoAlpha: 0.94, duration: 0.4, ease: "power2.out" }, 0.55)
+          .call(() => {
+            interactiveRef.current = true;
+            clickLockRef.current = false;
+            setInteractive(true);
+            if (!gateTriggeredRef.current) {
+              gateTriggeredRef.current = true;
+              setSoftGateActive(true);
+              if (gateTimeoutRef.current) window.clearTimeout(gateTimeoutRef.current);
+              gateTimeoutRef.current = window.setTimeout(() => {
+                setSoftGateActive(false);
+                gateTimeoutRef.current = null;
+              }, SOFT_GATE_MS);
+            }
+          }, null, 1.2)
+          .call(() => {
+            if (pulseTweensRef.current) {
+              pulseTweensRef.current.left?.kill();
+              pulseTweensRef.current.right?.kill();
+              pulseTweensRef.current = null;
+            }
+          }, null, 1.8)
+          .to(".knee-zone-hint-core", {
+            scale: 1.35,
+            boxShadow: "0 0 0 1px rgba(138,210,255,0.6),0 0 60px rgba(138,210,255,0.5)",
+            duration: 0.3,
+            stagger: 0.06,
+            ease: "power2.out",
+          }, 1.8)
+          .to(".knee-zone-hint-core", {
+            scale: 1.1,
+            boxShadow: "0 0 0 1px rgba(138,210,255,0.35),0 0 32px rgba(138,210,255,0.28)",
+            duration: 0.3,
+            stagger: 0.06,
+            ease: "power2.in",
+          })
+          .to(".knee-knee-glow", { scale: 1.15, autoAlpha: 1.2, duration: 0.3, ease: "power2.out" }, 1.8)
+          .to(".knee-knee-glow", { scale: 1, autoAlpha: 1, duration: 0.3, ease: "power2.in" });
+        return tl;
+      };
+
+      // Resets all body/text elements to their pre-autoplay initial states.
+      const resetVisualState = () => {
+        gsap.set(".knee-trust-copy", { autoAlpha: 1, overwrite: "auto" });
+        gsap.set(".knee-step-label", { autoAlpha: 0, y: 8, overwrite: "auto" });
+        gsap.set(".knee-headline", { autoAlpha: 0, y: 22, scale: 0.98, overwrite: "auto" });
+        gsap.set(".knee-image-shell", { autoAlpha: 0.08, y: 10, scale: 1, rotateY: -5, filter: `blur(${blurStart}px)`, overwrite: "auto" });
+        gsap.set(".knee-figure", { scale: 0.86, yPercent: 0, overwrite: "auto" });
+        gsap.set(".knee-knee-glow", { autoAlpha: 0.12, scale: 0.9, overwrite: "auto" });
+        gsap.set(".knee-zone-hint", { autoAlpha: 0.18, overwrite: "auto" });
+        gsap.set(".knee-zone-hint-core", { scale: 0.92, boxShadow: "none", overwrite: "auto" });
+        gsap.set(".knee-interaction-field", { autoAlpha: 0.2, overwrite: "auto" });
+      };
+
+      // Pin the section. First scroll past pin triggers the auto-play once.
+      // On leaveBack, kill the old timeline so re-entry gets a clean fresh build.
+      const st = ScrollTrigger.create({
+        trigger: sectionRef.current,
+        start: "top top",
+        end: "+=120%",
+        pin: stageElement,
+        anticipatePin: 1,
+        onEnter: () => {
+          if (hasPlayedRef.current) return;
+          hasPlayedRef.current = true;
+          // Subtle glow pulse on emphasis words during the trust hold.
+          gsap.fromTo(
+            ".knee-trust-emphasis",
+            { textShadow: "0 0 20px rgba(255,255,255,0.1)" },
+            {
+              textShadow: "0 0 38px rgba(255,255,255,0.42)",
+              duration: 0.55,
+              ease: "power2.out",
+              delay: 0.2,
+              yoyo: true,
+              repeat: 1,
+              repeatDelay: 0.18,
+            }
+          );
+          // Hold the trust statement on screen for 1.6s, then autoplay body zoom.
+          autoplayDelayRef.current = setTimeout(() => {
+            autoplayDelayRef.current = null;
+            const tl = buildStageTimeline();
+            stageTimelineRef.current = tl;
+            tl.play();
+          }, 1600);
+        },
+        onLeaveBack: () => {
+          // Cancel any pending autoplay delay and kill the active timeline.
+          if (autoplayDelayRef.current) {
+            clearTimeout(autoplayDelayRef.current);
+            autoplayDelayRef.current = null;
+          }
+          if (stageTimelineRef.current) {
+            stageTimelineRef.current.kill();
+            stageTimelineRef.current = null;
+          }
+          hasPlayedRef.current = false;
+          interactiveRef.current = false;
+          gateTriggeredRef.current = false;
+          setInteractive(false);
+          setSoftGateActive(false);
+          setHoverRegion("");
+          setHoverSide("");
+          if (gateTimeoutRef.current) {
+            window.clearTimeout(gateTimeoutRef.current);
+            gateTimeoutRef.current = null;
+          }
+          if (pulseTweensRef.current) {
+            pulseTweensRef.current.left?.kill();
+            pulseTweensRef.current.right?.kill();
+            pulseTweensRef.current = null;
+          }
+          resetVisualState();
+        },
+      });
 
       gsap.to(".knee-light-sweep", {
         xPercent: 130,
@@ -235,6 +301,16 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         repeat: -1,
         repeatDelay: 6.8,
       });
+
+      return () => {
+        st.kill();
+        if (autoplayDelayRef.current) {
+          clearTimeout(autoplayDelayRef.current);
+          autoplayDelayRef.current = null;
+        }
+        stageTimelineRef.current?.kill();
+        stageTimelineRef.current = null;
+      };
     },
     { scope: sectionRef, dependencies: [reducedMotion] }
   );
@@ -308,10 +384,12 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       yoyo: true,
       delay: 0.14,
     });
+    pulseTweensRef.current = { left: leftPulse, right: rightPulse };
 
     return () => {
       leftPulse.kill();
       rightPulse.kill();
+      pulseTweensRef.current = null;
     };
   }, [interactive, reducedMotion]);
 
@@ -322,6 +400,9 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       }
       if (gateTimeoutRef.current) {
         window.clearTimeout(gateTimeoutRef.current);
+      }
+      if (autoplayDelayRef.current) {
+        clearTimeout(autoplayDelayRef.current);
       }
     },
     []
@@ -415,7 +496,10 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
   };
 
   return (
-    <section ref={sectionRef} className="relative min-h-[460vh] bg-black text-white">
+    <section
+      ref={sectionRef}
+      className={`relative bg-black text-white ${reducedMotion ? "min-h-[380vh]" : "min-h-[220vh]"}`}
+    >
       <div className="knee-stage relative h-screen overflow-hidden px-6 py-[9vh] md:px-10">
         <div className="knee-light-field pointer-events-none absolute inset-0 z-[1] will-change-[opacity]">
           <div className="absolute left-1/2 top-[58%] h-[340px] w-[460px] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,_rgba(156,196,232,0.12)_0%,_rgba(72,112,150,0.08)_34%,_rgba(0,0,0,0)_72%)] md:h-[420px] md:w-[560px]" />
@@ -438,13 +522,6 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
             <p className="sr-only">
               {TRUST_HEADLINE}
             </p>
-            <div className="mt-7 space-y-2">
-              {TRUST_SPECS.map((spec) => (
-                <p key={spec} className="knee-spec text-[clamp(16px,1.7vw,24px)] font-light tracking-[-0.01em] text-white/80">
-                  {spec}
-                </p>
-              ))}
-            </div>
           </div>
           <div className="relative mx-auto max-w-6xl text-center">
             <p className="knee-step-label mb-3 text-[11px] uppercase tracking-[0.18em] text-white/70">Step 1 of 4</p>

@@ -807,7 +807,7 @@ export function HomeExperience() {
                 const rect = trigger.getBoundingClientRect();
                 const scrollY = window.scrollY ?? document.documentElement.scrollTop;
                 const triggerTop = rect.top + scrollY;
-                const targetScroll = triggerTop + 3.6 * window.innerHeight;
+                const targetScroll = triggerTop + 0.1 * window.innerHeight;
                 window.scrollTo({ top: targetScroll, behavior: "smooth" });
               });
             }}
