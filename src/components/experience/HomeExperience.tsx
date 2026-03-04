@@ -7,7 +7,6 @@ import { useGSAP } from "@gsap/react";
 import Link from "next/link";
 import type { SearchResult } from "@/lib/types";
 import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
-import { ExploreOverlay } from "@/components/experience/ExploreOverlay";
 import { KneeSelector, type KneePainRegion } from "@/components/experience/KneeSelector";
 import { ProviderCard } from "@/components/experience/ProviderCard";
 
@@ -46,7 +45,6 @@ function getPersonalizedReview(status: string, duration?: string): { statement: 
 }
 
 export function HomeExperience() {
-  const [exploreOpen, setExploreOpen] = useState(false);
   const [step, setStep] = useState<AssessmentStep>("knee");
   const [painRegion, setPainRegion] = useState<PainRegion>("");
   const [duration, setDuration] = useState("");
@@ -434,27 +432,6 @@ export function HomeExperience() {
 
   return (
     <main ref={container} className="relative bg-white text-[#111111]">
-      <button
-        type="button"
-        onClick={() => setExploreOpen(true)}
-        className="fixed right-5 top-5 z-40 inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/95 px-5 py-2.5 text-[15px] font-medium tracking-tight text-black shadow-[0_6px_18px_rgba(0,0,0,0.08),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(0,0,0,0.14),0_1px_0_rgba(255,255,255,0.95)_inset] md:right-8 md:top-6"
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          className="h-[17px] w-[17px]"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <line x1="16.65" y1="16.65" x2="21" y2="21" />
-        </svg>
-        Explore
-      </button>
-      <ExploreOverlay open={exploreOpen} onClose={() => setExploreOpen(false)} />
 
       <section className="sticky top-0 z-0 flex h-screen flex-col items-center justify-center px-6 text-center">
         <p className="hero-arc text-[clamp(56px,12vw,150px)] font-light tracking-tight">
