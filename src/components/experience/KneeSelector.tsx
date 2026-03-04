@@ -191,14 +191,14 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
                 gateTimeoutRef.current = null;
               }, SOFT_GATE_MS);
             }
-          }, null, 1.2)
+          }, undefined, 1.2)
           .call(() => {
             if (pulseTweensRef.current) {
               pulseTweensRef.current.left?.kill();
               pulseTweensRef.current.right?.kill();
               pulseTweensRef.current = null;
             }
-          }, null, 1.8)
+          }, undefined, 1.8)
           .to(".knee-zone-hint-core", {
             scale: 1.35,
             boxShadow: "0 0 0 1px rgba(138,210,255,0.6),0 0 60px rgba(138,210,255,0.5)",
