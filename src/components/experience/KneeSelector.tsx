@@ -82,7 +82,8 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       clickLockRef.current = false;
       interactiveRef.current = reducedMotion;
       gateTriggeredRef.current = false;
-      hasPlayedRef.current = false;
+      // Do NOT reset hasPlayedRef here — it persists across reducedMotion changes
+      // so re-entry always skips autoplay once the user has seen it.
       if (autoplayDelayRef.current) {
         clearTimeout(autoplayDelayRef.current);
         autoplayDelayRef.current = null;
@@ -231,6 +232,20 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         gsap.set(".knee-interaction-field", { autoAlpha: 0.2, overwrite: "auto" });
       };
 
+      // Instantly restores the post-autoplay active/interactive state.
+      // Used on re-entry so the user never waits through the intro again.
+      const resetToActiveState = () => {
+        gsap.set(".knee-trust-copy", { autoAlpha: 0, overwrite: "auto" });
+        gsap.set(".knee-step-label", { autoAlpha: 0.82, y: 0, overwrite: "auto" });
+        gsap.set(".knee-headline", { autoAlpha: 1, y: 0, scale: 1, overwrite: "auto" });
+        gsap.set(".knee-image-shell", { autoAlpha: 0.95, y: 0, scale: 1.05, rotateY: 0, filter: "blur(0px)", overwrite: "auto" });
+        gsap.set(".knee-figure", { scale: 0.98, yPercent: 0, overwrite: "auto" });
+        gsap.set(".knee-knee-glow", { autoAlpha: 1, scale: 1, overwrite: "auto" });
+        gsap.set(".knee-zone-hint", { autoAlpha: 0.84, overwrite: "auto" });
+        gsap.set(".knee-zone-hint-core", { scale: 1, boxShadow: "0 0 0 1px rgba(138,210,255,0.35),0 0 32px rgba(138,210,255,0.28)", overwrite: "auto" });
+        gsap.set(".knee-interaction-field", { autoAlpha: 0.94, overwrite: "auto" });
+      };
+
       // Pin the section. First scroll past pin triggers the auto-play once.
       // On leaveBack, kill the old timeline so re-entry gets a clean fresh build.
       const st = ScrollTrigger.create({
@@ -240,7 +255,13 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
         pin: stageElement,
         anticipatePin: 1,
         onEnter: () => {
-          if (hasPlayedRef.current) return;
+          // Re-entry after autoplay has already played: skip intro, show active state instantly.
+          if (hasPlayedRef.current) {
+            resetToActiveState();
+            interactiveRef.current = true;
+            setInteractive(true);
+            return;
+          }
           hasPlayedRef.current = true;
           // Subtle glow pulse on emphasis words during the trust hold.
           gsap.fromTo(
@@ -264,6 +285,14 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
             tl.play();
           }, 1600);
         },
+        // Fired when scrolling back UP into the section from below (past the end).
+        onEnterBack: () => {
+          if (hasPlayedRef.current) {
+            resetToActiveState();
+            interactiveRef.current = true;
+            setInteractive(true);
+          }
+        },
         onLeaveBack: () => {
           // Cancel any pending autoplay delay and kill the active timeline.
           if (autoplayDelayRef.current) {
@@ -274,7 +303,8 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
             stageTimelineRef.current.kill();
             stageTimelineRef.current = null;
           }
-          hasPlayedRef.current = false;
+          // Preserve hasPlayedRef — once seen, re-entry skips autoplay.
+          const hadPlayed = hasPlayedRef.current;
           interactiveRef.current = false;
           gateTriggeredRef.current = false;
           setInteractive(false);
@@ -290,7 +320,8 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
             pulseTweensRef.current.right?.kill();
             pulseTweensRef.current = null;
           }
-          resetVisualState();
+          // Show active state if autoplay had played, otherwise reset to initial state.
+          hadPlayed ? resetToActiveState() : resetVisualState();
         },
       });
 

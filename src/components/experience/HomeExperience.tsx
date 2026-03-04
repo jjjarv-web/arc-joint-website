@@ -6,6 +6,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
 import type { SearchResult } from "@/lib/types";
+import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
 import { ExploreOverlay } from "@/components/experience/ExploreOverlay";
 import { KneeSelector, type KneePainRegion } from "@/components/experience/KneeSelector";
 
@@ -504,6 +505,7 @@ export function HomeExperience() {
         </div>
       </section>
 
+      <AssessmentErrorBoundary>
       <div ref={kneeSectionRef} className="relative z-30 min-h-screen bg-black">
         <KneeSelector
           selectedRegion={painRegion}
@@ -789,6 +791,7 @@ export function HomeExperience() {
           </div>
         )}
       </div>
+      </AssessmentErrorBoundary>
 
       <section className="relative z-20 flex min-h-[75vh] flex-col items-center justify-center bg-[#f7f7f7] px-6">
         <div data-reveal className="mx-auto w-full max-w-4xl text-center">
