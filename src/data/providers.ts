@@ -7,6 +7,7 @@ export const providers: Provider[] = [
     name: "ARC Center Scottsdale",
     description:
       "Precision peripheral nerve stimulation with a preserve-first decision model.",
+    specialty: "Orthopedic Surgeon",
     city: "Scottsdale",
     state: "AZ",
     zip: "85251",
@@ -22,6 +23,7 @@ export const providers: Provider[] = [
     name: "Phoenix Ortho Partners",
     description:
       "Integrated pain and orthopedic care focused on minimally invasive options first.",
+    specialty: "Orthopedic Surgeon",
     city: "Phoenix",
     state: "AZ",
     zip: "85004",
@@ -37,6 +39,7 @@ export const providers: Provider[] = [
     name: "Austin Preserve Clinic",
     description:
       "Neuromodulation-forward treatment planning for chronic knee pain patients.",
+    specialty: "Neurosurgeon",
     city: "Austin",
     state: "TX",
     zip: "78701",
@@ -52,6 +55,7 @@ export const providers: Provider[] = [
     name: "San Diego Nerve Institute",
     description:
       "Conservative interventions and precision stimulation pathways before replacement.",
+    specialty: "Neurosurgeon",
     city: "San Diego",
     state: "CA",
     zip: "92101",
@@ -67,6 +71,7 @@ export const providers: Provider[] = [
     name: "Orange County ARC Medical",
     description:
       "Candidate evaluation and treatment sequencing for preserve and modulate pathways.",
+    specialty: "Orthopedic Surgeon",
     city: "Irvine",
     state: "CA",
     zip: "92618",

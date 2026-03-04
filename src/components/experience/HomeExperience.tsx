@@ -15,6 +15,10 @@ gsap.registerPlugin(ScrollTrigger, useGSAP);
 type AssessmentStep = "knee" | "duration" | "status" | "zip";
 type PainRegion = KneePainRegion | "";
 
+const PROCEDURE_LABELS: Record<string, string> = {
+  PNS: "Peripheral Nerve Stimulation",
+};
+
 function getPersonalizedReview(status: string, duration?: string): { statement: string; credential: string } {
   if (status.includes("scheduled")) {
     return {
@@ -59,6 +63,43 @@ export function HomeExperience() {
   const [providerLoading, setProviderLoading] = useState(false);
   const [providerError, setProviderError] = useState("");
   const [providerResults, setProviderResults] = useState<SearchResult[]>([]);
+  const [activeProviderId, setActiveProviderId] = useState("");
+  const [zipExpanded, setZipExpanded] = useState(false);
+
+  const isCollapsed = results.length > 0 && !zipExpanded;
+
+  // Refs for GSAP-driven zip transition
+  const reviewFormRef = useRef<HTMLDivElement>(null);
+  const zipResultsAreaRef = useRef<HTMLDivElement>(null);
+  const zipTlRef = useRef<gsap.core.Timeline | null>(null);
+  const prevIsCollapsedRef = useRef(false);
+
+  useEffect(() => {
+    if (isCollapsed === prevIsCollapsedRef.current) return;
+    prevIsCollapsedRef.current = isCollapsed;
+
+    const formEl = reviewFormRef.current;
+    const resultsEl = zipResultsAreaRef.current;
+    if (!formEl || !resultsEl) return;
+
+    zipTlRef.current?.kill();
+
+    if (isCollapsed) {
+      // Fade form out + collapse height, then ease results up
+      zipTlRef.current = gsap.timeline()
+        .to(formEl, { opacity: 0, height: 0, overflow: "hidden", duration: 0.42, ease: "power2.inOut" })
+        .fromTo(resultsEl, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.52, ease: "power2.out" }, "-=0.05");
+    } else {
+      // Change ZIP: fade results out, restore form
+      zipTlRef.current = gsap.timeline()
+        .to(resultsEl, { opacity: 0, duration: 0.25, ease: "power2.in" })
+        .call(() => { gsap.set(formEl, { clearProps: "height,overflow" }); })
+        .to(formEl, { opacity: 1, duration: 0.38, ease: "power2.out" }, "+=0.05");
+    }
+
+    return () => { zipTlRef.current?.kill(); };
+  }, [isCollapsed]);
+
   const container = useRef<HTMLDivElement>(null);
   const productSectionRef = useRef<HTMLElement>(null);
   const kneeSectionRef = useRef<HTMLDivElement>(null);
@@ -285,13 +326,16 @@ export function HomeExperience() {
   );
 
   const resetAssessment = () => {
+    zipTlRef.current?.kill();
     setStep("knee");
     setPainRegion("");
     setDuration("");
     setReplacementStatus("");
     setZip("");
+    setZipExpanded(false);
     setError("");
     setResults([]);
+    setActiveProviderId("");
     setLoading(false);
   };
 
@@ -309,7 +353,12 @@ export function HomeExperience() {
         throw new Error(data.error || "Unable to search providers right now.");
       }
 
-      setResults(data.results || []);
+      const incoming = data.results || [];
+      setResults(incoming);
+      if (incoming.length > 0) {
+        setActiveProviderId(incoming[0].id);
+        setZipExpanded(false);
+      }
     } catch (requestError) {
       const message =
         requestError instanceof Error
@@ -652,7 +701,7 @@ export function HomeExperience() {
                       type="button"
                       onClick={() => setStep("status")}
                       style={{ opacity: 0, animation: "fadeIn 0.4s ease-out 0.1s forwards" }}
-                      className="mb-8 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
+                      className="mb-8 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/50 hover:opacity-80"
                     >
                       <span aria-hidden="true">←</span> Back
                     </button>
@@ -665,150 +714,239 @@ export function HomeExperience() {
                       Your Knee Pain Review
                     </p>
 
-                    {/* Statement — the hero reveal */}
-                    <p
-                      style={{ opacity: 0, animation: "fadeIn 0.9s ease-out 0.35s forwards" }}
-                      className="text-[22px] font-light leading-[1.48] tracking-tight text-white md:text-[24px]"
-                    >
-                      {statement}
-                    </p>
-
-                    {/* Credential — follows after */}
-                    <p
-                      style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 0.85s forwards" }}
-                      className="mt-5 text-[16px] font-light leading-relaxed text-white/65 md:text-[17px]"
-                    >
-                      {credential}
-                    </p>
-
-                    {/* Divider — transition into action */}
-                    <div
-                      style={{ opacity: 1, animation: "drawLine 0.9s ease-out 2.0s both" }}
-                      className="my-10 h-px w-full origin-left bg-white/[0.1]"
-                    />
-
-                    {/* ZIP section */}
-                    <div style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 3.2s forwards" }}>
-                      <p className="mb-2 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
-                        Enter your ZIP to find a provider near you.
+                    {/* Review + ZIP form — GSAP collapses this on submit */}
+                    <div ref={reviewFormRef}>
+                      <p
+                        style={{ opacity: 0, animation: "fadeIn 0.9s ease-out 0.35s forwards" }}
+                        className="text-[22px] font-light leading-[1.48] tracking-tight text-white md:text-[24px]"
+                      >
+                        {statement}
                       </p>
+                      <p
+                        style={{ opacity: 0, animation: "fadeIn 0.8s ease-out 0.85s forwards" }}
+                        className="mt-5 text-[16px] font-light leading-relaxed text-white/65 md:text-[17px]"
+                      >
+                        {credential}
+                      </p>
+                      <div
+                        style={{ opacity: 1, animation: "drawLine 0.9s ease-out 2.0s both" }}
+                        className="my-10 h-px w-full origin-left bg-white/[0.1]"
+                      />
 
-                      <form onSubmit={runSearch}>
-                        {/* ZIP input with traveling border light */}
-                        <div className="relative overflow-hidden rounded-2xl p-px">
-                          {/* Spinning border light */}
-                          <div
-                            className="absolute inset-[-100%]"
-                            style={{
-                              background: "conic-gradient(from 0deg, transparent 0deg, transparent 120deg, rgba(138,210,255,0.55) 180deg, rgba(255,255,255,0.3) 200deg, rgba(138,210,255,0.55) 220deg, transparent 280deg, transparent 360deg)",
-                              animation: "borderSpin 3.5s linear infinite",
-                            }}
-                          />
-                          {/* Inner card */}
-                          <div
-                            className="relative rounded-[15px] px-5 py-5"
-                            style={{ backgroundColor: "#1a1a1a" }}
-                          >
-                            <label htmlFor="zip-input" className="mb-2 block text-[13px] font-light text-white/70">
-                              Enter your ZIP code
-                            </label>
-                            <div className="flex items-center gap-3">
-                              <input
-                                id="zip-input"
-                                type="text"
-                                inputMode="numeric"
-                                pattern="\d{5}"
-                                maxLength={5}
-                                value={zip}
-                                autoFocus
-                                onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
-                                placeholder="e.g. 90210"
-                                className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/25 md:text-[24px]"
-                              />
-                              {/* Live digit count */}
-                              <span className="shrink-0 text-[12px] tabular-nums text-white/50">
-                                {zip.length}/5
-                              </span>
-                            </div>
-                            {/* Digit fill bar */}
-                            <div className="mt-3 h-px w-full rounded-full bg-white/10">
-                              <div
-                                className="h-full rounded-full transition-all duration-200"
-                                style={{
-                                  width: `${(zip.length / 5) * 100}%`,
-                                  backgroundColor: zip.length === 5 ? "rgba(138,210,255,0.8)" : "rgba(138,210,255,0.4)",
-                                  boxShadow: zip.length > 0 ? "0 0 6px rgba(138,210,255,0.5)" : "none",
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Submit */}
-                        <button
-                          type="submit"
-                          disabled={zip.length !== 5 || loading}
-                          className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98]"
-                          style={{
-                            backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
-                            color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
-                            boxShadow: zip.length === 5 ? "0 0 50px rgba(138,210,255,0.18), 0 0 20px rgba(255,255,255,0.1)" : "none",
-                            animation: zip.length === 5 ? "subtlePulse 0.4s ease-out" : "none",
-                          }}
-                        >
-                          {loading ? (
-                            <span className="inline-flex items-center justify-center gap-2">
-                              <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
-                              Searching…
-                            </span>
-                          ) : "Show Providers Near Me"}
-                        </button>
-
-                      </form>
-
-                      {/* Social proof — below form, above results */}
-                      {results.length === 0 && !loading && (
-                        <p className="mt-4 text-center text-[12px] font-light text-white/45">
-                          Used by patients across the country to find ARC-trained providers.
+                      <div style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 3.2s forwards" }}>
+                        <p className="mb-2 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
+                          Enter your ZIP to find a provider near you.
                         </p>
-                      )}
-
-                      {error && <p className="mt-4 text-center text-sm text-red-400/70">{error}</p>}
-
-                      {results.length > 0 && (
-                        <div className="mt-6 animate-[fadeIn_0.5s_ease-out_forwards]">
-                          <div className="mb-3 flex items-center justify-between">
-                            <p className="text-[10px] uppercase tracking-[0.22em] text-white/55">Near {zip}</p>
-                            <p className="text-[10px] text-white/40">{nearestLabel}</p>
+                        <form onSubmit={runSearch}>
+                          <div className="relative overflow-hidden rounded-2xl p-px">
+                            <div
+                              className="absolute inset-[-100%]"
+                              style={{
+                                background: "conic-gradient(from 0deg, transparent 0deg, transparent 120deg, rgba(138,210,255,0.55) 180deg, rgba(255,255,255,0.3) 200deg, rgba(138,210,255,0.55) 220deg, transparent 280deg, transparent 360deg)",
+                                animation: results.length > 0 || loading ? "none" : "borderSpin 3.5s linear infinite",
+                                opacity: results.length > 0 ? 0 : 1,
+                                transition: "opacity 0.4s ease-out",
+                              }}
+                            />
+                            <div className="relative rounded-[15px] px-5 py-5" style={{ backgroundColor: "#1a1a1a" }}>
+                              <label htmlFor="zip-input" className="mb-2 block text-[13px] font-light text-white/70">
+                                Enter your ZIP code
+                              </label>
+                              <div className="flex items-center gap-3">
+                                <input
+                                  id="zip-input"
+                                  type="text"
+                                  inputMode="numeric"
+                                  pattern="\d{5}"
+                                  maxLength={5}
+                                  value={zip}
+                                  onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
+                                  placeholder="e.g. 90210"
+                                  className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/25 md:text-[24px]"
+                                />
+                                <span className="shrink-0 text-[12px] tabular-nums text-white/50">{zip.length}/5</span>
+                              </div>
+                              <div className="mt-3 h-px w-full rounded-full bg-white/10">
+                                <div
+                                  className="h-full rounded-full transition-all duration-200"
+                                  style={{
+                                    width: `${(zip.length / 5) * 100}%`,
+                                    backgroundColor: zip.length === 5 ? "rgba(138,210,255,0.8)" : "rgba(138,210,255,0.4)",
+                                    boxShadow: zip.length > 0 ? "0 0 6px rgba(138,210,255,0.5)" : "none",
+                                  }}
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <ul className="space-y-2">
-                            {results.map((provider) => (
-                              <li
-                                key={provider.id}
-                                className="group flex items-center justify-between rounded-xl border border-white/[0.1] bg-white/[0.05] px-5 py-4 transition-all duration-200 hover:border-white/[0.18] hover:bg-white/[0.09]"
-                              >
-                                <div>
-                                  <p className="text-[15px] font-light text-white">{provider.name}</p>
-                                  <p className="mt-0.5 text-[12px] text-white/60">
-                                    {provider.city}, {provider.state} · {provider.distanceMiles.toFixed(1)} mi
-                                  </p>
-                                </div>
-                                <Link
-                                  href={`/providers/${provider.slug}`}
-                                  className="ml-4 shrink-0 text-[11px] uppercase tracking-[0.12em] text-white/55 transition-colors group-hover:text-white/90"
-                                >
-                                  View →
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                          <Link
-                            href="/providers"
-                            className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
+                          <button
+                            type="submit"
+                            disabled={zip.length !== 5 || loading}
+                            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98]"
+                            style={{
+                              backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
+                              color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
+                              boxShadow: zip.length === 5 ? "0 0 50px rgba(138,210,255,0.18), 0 0 20px rgba(255,255,255,0.1)" : "none",
+                              animation: zip.length === 5 ? "subtlePulse 0.4s ease-out" : "none",
+                            }}
                           >
-                            See all providers →
-                          </Link>
+                            {loading ? (
+                              <span className="inline-flex items-center justify-center gap-2">
+                                <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
+                                Searching…
+                              </span>
+                            ) : "Show Providers Near Me"}
+                          </button>
+                        </form>
+                        {results.length === 0 && !loading && (
+                          <p className="mt-4 text-center text-[12px] font-light text-white/45">
+                            Used by patients across the country to find ARC-trained providers.
+                          </p>
+                        )}
+                        {error && <p className="mt-4 text-center text-sm text-red-400/70">{error}</p>}
+                      </div>
+                    </div>
+
+                    {/* Summary bar + results — always in DOM, GSAP fades in after form collapses */}
+                    <div ref={zipResultsAreaRef} style={{ opacity: 0 }}>
+                      {/* Summary bar */}
+                      <div
+                        className="flex items-center justify-between rounded-2xl px-4 py-3"
+                        style={{ backgroundColor: "#1a1a1a" }}
+                      >
+                        <div>
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Near {zip}</p>
+                          <p className="mt-0.5 text-[14px] font-light text-white/70">
+                            {results.length} provider{results.length !== 1 ? "s" : ""} found
+                          </p>
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => setZipExpanded(true)}
+                          className="rounded-full px-3.5 py-1.5 text-[12px] font-medium tracking-tight text-white/60 transition-colors hover:text-white/90"
+                          style={{ backgroundColor: "rgba(255,255,255,0.08)" }}
+                        >
+                          Change ZIP
+                        </button>
+                      </div>
+
+                      {/* Provider results */}
+                      {results.length > 0 && (
+                      <div className="mt-6">
+                        <div className="mb-3 flex items-center justify-between">
+                          <p className="text-[10px] uppercase tracking-[0.22em] text-white/55">Near {zip}</p>
+                          <p className="text-[10px] text-white/40">{nearestLabel}</p>
+                        </div>
+
+                        <ul className="space-y-2">
+                          {results.map((provider, index) => {
+                            const isActive = provider.id === activeProviderId;
+                            const isClosest = index === 0;
+                            return (
+                              <li key={provider.id}>
+                                <button
+                                  type="button"
+                                  onClick={() => setActiveProviderId(provider.id)}
+                                  className={`w-full rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
+                                    isActive
+                                      ? "border-white/[0.22] bg-white/[0.09]"
+                                      : "border-white/[0.10] bg-white/[0.05] hover:border-white/[0.16] hover:bg-white/[0.08]"
+                                  }`}
+                                >
+                                  {/* Always-visible header */}
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <p className="text-[16px] font-light text-white leading-snug">
+                                        {provider.name}
+                                      </p>
+                                      <p className="mt-0.5 text-[12px] text-white/55">
+                                        {provider.city}, {provider.state} · {provider.distanceMiles.toFixed(1)} mi
+                                      </p>
+                                    </div>
+                                    {isClosest && (
+                                      <span className="mt-0.5 shrink-0 rounded-full border border-white/20 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/55">
+                                        Closest
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Resting state details */}
+                                  <div className="mt-2.5 space-y-0.5">
+                                    <p className="text-[13px] font-light text-white/70">{provider.specialty}</p>
+                                    <p className="text-[12px] text-white/45">Medicare and most private insurance accepted</p>
+                                  </div>
+
+                                  {/* Expanded content — CSS grid animation */}
+                                  <div
+                                    className="grid transition-[grid-template-rows] duration-300 ease-out"
+                                    style={{ gridTemplateRows: isActive ? "1fr" : "0fr" }}
+                                  >
+                                    <div className="overflow-hidden">
+                                      <div className="pt-4">
+                                        {/* Procedures */}
+                                        <div className="mb-4 space-y-0.5">
+                                          {provider.procedures.map((proc) => (
+                                            <p key={proc} className="text-[13px] font-light text-white/70">
+                                              {PROCEDURE_LABELS[proc] ?? proc}
+                                            </p>
+                                          ))}
+                                        </div>
+
+                                        {/* Divider */}
+                                        <div className="mb-4 h-px w-full bg-white/[0.08]" />
+
+                                        {/* CTAs */}
+                                        <div className="flex gap-2.5">
+                                          <a
+                                            href={provider.bookingUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 rounded-full bg-white py-3 text-center text-[13px] font-medium text-black transition-opacity hover:opacity-90 active:opacity-75"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            Request Appointment
+                                          </a>
+                                          <a
+                                            href={provider.bookingUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex-1 rounded-full border border-white/25 py-3 text-center text-[13px] font-light text-white/80 transition-all hover:border-white/40 hover:text-white active:opacity-75"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            Message Clinic
+                                          </a>
+                                        </div>
+
+                                        {/* Disclaimer */}
+                                        <p className="mt-3 text-center text-[11px] text-white/35">
+                                          Coverage verified after scheduling
+                                        </p>
+
+                                        {/* Provider page link */}
+                                        <div className="mt-4 text-center">
+                                          <Link
+                                            href={`/providers/${provider.slug}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                            className="text-[11px] uppercase tracking-[0.14em] text-white/40 transition-colors hover:text-white/70"
+                                          >
+                                            View full profile →
+                                          </Link>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+
+                        <Link
+                          href="/providers"
+                          className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
+                        >
+                          See all providers →
+                        </Link>
+                      </div>
                       )}
                     </div>
                   </div>

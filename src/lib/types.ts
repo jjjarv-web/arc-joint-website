@@ -5,6 +5,7 @@ export interface Provider {
   slug: string;
   name: string;
   description: string;
+  specialty: string;
   city: string;
   state: string;
   zip: string;
