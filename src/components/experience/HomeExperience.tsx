@@ -9,15 +9,13 @@ import type { SearchResult } from "@/lib/types";
 import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
 import { ExploreOverlay } from "@/components/experience/ExploreOverlay";
 import { KneeSelector, type KneePainRegion } from "@/components/experience/KneeSelector";
+import { ProviderCard } from "@/components/experience/ProviderCard";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 type AssessmentStep = "knee" | "duration" | "status" | "zip";
 type PainRegion = KneePainRegion | "";
 
-const PROCEDURE_LABELS: Record<string, string> = {
-  PNS: "Peripheral Nerve Stimulation",
-};
 
 function getPersonalizedReview(status: string, duration?: string): { statement: string; credential: string } {
   if (status.includes("scheduled")) {
@@ -64,6 +62,7 @@ export function HomeExperience() {
   const [providerError, setProviderError] = useState("");
   const [providerResults, setProviderResults] = useState<SearchResult[]>([]);
   const [activeProviderId, setActiveProviderId] = useState("");
+  const [activeBottomProviderId, setActiveBottomProviderId] = useState("");
   const [zipExpanded, setZipExpanded] = useState(false);
 
   const isCollapsed = results.length > 0 && !zipExpanded;
@@ -381,7 +380,9 @@ export function HomeExperience() {
       if (!response.ok) {
         throw new Error(data.error || "Unable to search providers right now.");
       }
-      setProviderResults(data.results || []);
+      const incoming = data.results || [];
+      setProviderResults(incoming);
+      if (incoming.length > 0) setActiveBottomProviderId(incoming[0].id);
     } catch (requestError) {
       const message =
         requestError instanceof Error
@@ -838,106 +839,17 @@ export function HomeExperience() {
                         </div>
 
                         <ul className="space-y-2">
-                          {results.map((provider, index) => {
-                            const isActive = provider.id === activeProviderId;
-                            const isClosest = index === 0;
-                            return (
-                              <li key={provider.id}>
-                                <button
-                                  type="button"
-                                  onClick={() => setActiveProviderId(provider.id)}
-                                  className={`w-full rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
-                                    isActive
-                                      ? "border-white/[0.22] bg-white/[0.09]"
-                                      : "border-white/[0.10] bg-white/[0.05] hover:border-white/[0.16] hover:bg-white/[0.08]"
-                                  }`}
-                                >
-                                  {/* Always-visible header */}
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <p className="text-[16px] font-light text-white leading-snug">
-                                        {provider.name}
-                                      </p>
-                                      <p className="mt-0.5 text-[12px] text-white/55">
-                                        {provider.city}, {provider.state} · {provider.distanceMiles.toFixed(1)} mi
-                                      </p>
-                                    </div>
-                                    {isClosest && (
-                                      <span className="mt-0.5 shrink-0 rounded-full border border-white/20 px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] text-white/55">
-                                        Closest
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {/* Resting state details */}
-                                  <div className="mt-2.5 space-y-0.5">
-                                    <p className="text-[13px] font-light text-white/70">{provider.specialty}</p>
-                                    <p className="text-[12px] text-white/45">Medicare and most private insurance accepted</p>
-                                  </div>
-
-                                  {/* Expanded content — CSS grid animation */}
-                                  <div
-                                    className="grid transition-[grid-template-rows] duration-300 ease-out"
-                                    style={{ gridTemplateRows: isActive ? "1fr" : "0fr" }}
-                                  >
-                                    <div className="overflow-hidden">
-                                      <div className="pt-4">
-                                        {/* Procedures */}
-                                        <div className="mb-4 space-y-0.5">
-                                          {provider.procedures.map((proc) => (
-                                            <p key={proc} className="text-[13px] font-light text-white/70">
-                                              {PROCEDURE_LABELS[proc] ?? proc}
-                                            </p>
-                                          ))}
-                                        </div>
-
-                                        {/* Divider */}
-                                        <div className="mb-4 h-px w-full bg-white/[0.08]" />
-
-                                        {/* CTAs */}
-                                        <div className="flex gap-2.5">
-                                          <a
-                                            href={provider.bookingUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex-1 rounded-full bg-white py-3 text-center text-[13px] font-medium text-black transition-opacity hover:opacity-90 active:opacity-75"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            Request Appointment
-                                          </a>
-                                          <a
-                                            href={provider.bookingUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="flex-1 rounded-full border border-white/25 py-3 text-center text-[13px] font-light text-white/80 transition-all hover:border-white/40 hover:text-white active:opacity-75"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            Message Clinic
-                                          </a>
-                                        </div>
-
-                                        {/* Disclaimer */}
-                                        <p className="mt-3 text-center text-[11px] text-white/35">
-                                          Coverage verified after scheduling
-                                        </p>
-
-                                        {/* Provider page link */}
-                                        <div className="mt-4 text-center">
-                                          <Link
-                                            href={`/providers/${provider.slug}`}
-                                            onClick={(e) => e.stopPropagation()}
-                                            className="text-[11px] uppercase tracking-[0.14em] text-white/40 transition-colors hover:text-white/70"
-                                          >
-                                            View full profile →
-                                          </Link>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </button>
-                              </li>
-                            );
-                          })}
+                          {results.map((provider, index) => (
+                            <li key={provider.id}>
+                              <ProviderCard
+                                provider={provider}
+                                isActive={provider.id === activeProviderId}
+                                isClosest={index === 0}
+                                variant="dark"
+                                onSelect={setActiveProviderId}
+                              />
+                            </li>
+                          ))}
                         </ul>
 
                         <Link
@@ -1024,39 +936,31 @@ export function HomeExperience() {
             <p className="mt-4 text-sm text-red-500">{providerError}</p>
           )}
           {providerResults.length > 0 && (
-            <div className="mt-8 rounded-2xl border border-black/8 bg-white/80 p-6 text-left backdrop-blur-sm">
-              <div className="mb-4 flex items-center justify-between">
-                <p className="text-lg font-medium text-black">
-                  Providers near <span className="font-semibold">{providerZip}</span>
-                </p>
-                <p className="text-sm text-black/55">{providerNearestLabel}</p>
+            <div className="mt-6 w-full text-left animate-[fadeIn_0.5s_ease-out_forwards]">
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-[10px] uppercase tracking-[0.22em] text-black/45">Near {providerZip}</p>
+                <p className="text-[10px] text-black/35">{providerNearestLabel}</p>
               </div>
-              <ul className="space-y-3">
-                {providerResults.map((provider) => (
-                  <li
-                    key={provider.id}
-                    className="rounded-xl border border-black/8 px-5 py-4"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <p className="font-medium text-black">{provider.name}</p>
-                      <Link
-                        href={`/providers/${provider.slug}`}
-                        className="rounded-full border border-black/15 px-3 py-1 text-xs uppercase tracking-[0.1em] text-black/90 transition-colors hover:bg-black/5"
-                      >
-                        View
-                      </Link>
-                    </div>
-                    <p className="mt-1 text-sm text-black/55">
-                      {provider.city}, {provider.state} • {provider.distanceMiles.toFixed(1)} mi
-                    </p>
+
+              <ul className="space-y-2">
+                {providerResults.map((provider, index) => (
+                  <li key={provider.id}>
+                    <ProviderCard
+                      provider={provider}
+                      isActive={provider.id === activeBottomProviderId}
+                      isClosest={index === 0}
+                      variant="light"
+                      onSelect={setActiveBottomProviderId}
+                    />
                   </li>
                 ))}
               </ul>
+
               <Link
                 href="/providers"
-                className="mt-4 inline-block text-sm text-black/70 underline hover:text-black/90"
+                className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-black/40 transition-colors hover:text-black/70"
               >
-                See all providers
+                See all providers →
               </Link>
             </div>
           )}
