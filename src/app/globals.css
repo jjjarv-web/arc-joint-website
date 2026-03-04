@@ -40,3 +40,18 @@ body {
   from { transform: scaleX(0); opacity: 0; }
   to   { transform: scaleX(1); opacity: 1; }
 }
+
+/* Spring-style card entrance: rises past target then settles back */
+@keyframes slideUpSpring {
+  0%   { transform: translateY(72px); opacity: 0; }
+  55%  { opacity: 1; }
+  70%  { transform: translateY(-7px); }
+  85%  { transform: translateY(3px); }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+/* Fade up — used for headline and step indicators */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

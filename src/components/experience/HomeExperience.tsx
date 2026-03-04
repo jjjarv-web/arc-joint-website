@@ -359,11 +359,11 @@ export function HomeExperience() {
       return;
     }
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const duration = prefersReducedMotion ? 0 : 0.35;
+    const duration = prefersReducedMotion ? 0 : 0.22;
     gsap.fromTo(
       assessmentPanelRef.current,
       { autoAlpha: 0 },
-      { autoAlpha: 1, duration, ease: "power2.out" }
+      { autoAlpha: 1, duration, ease: "power1.out" }
     );
   }, [step]);
 
@@ -515,91 +515,118 @@ export function HomeExperience() {
         {step !== "knee" && (
           <div
             ref={assessmentPanelRef}
-            className="assessment-panel pointer-events-auto fixed inset-0 z-[35] flex flex-col items-center justify-center overflow-y-auto bg-[#111111] px-6 py-12"
+            className="assessment-panel pointer-events-auto fixed inset-0 z-[35] overflow-y-auto bg-[#111111] text-white"
           >
-            <div className="mx-auto w-full max-w-lg">
+            {/* ── Step 2: initial entry with cinematic headline + card ── */}
+            {step === "duration" && (
+              <div className="flex min-h-full flex-col items-center justify-center px-6 py-16">
+                <div className="w-full max-w-lg">
+                  {/* Headline acknowledgement */}
+                  <p
+                    className="mb-10 text-center text-[clamp(26px,7vw,48px)] font-light leading-tight tracking-tight text-white"
+                    style={{ opacity: 0, animation: "fadeUp 0.55s ease-out 0.2s forwards" }}
+                    aria-live="polite"
+                  >
+                    Let&apos;s look at your knee pain.
+                  </p>
 
-              {/* Steps 2 & 3: shared card with step indicator */}
-              {(step === "duration" || step === "status") && (
-                <>
-                  <div className="mb-5">
-                    <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/55">
-                      Step {step === "duration" ? 2 : 3} of 4
+                  {/* Step indicator */}
+                  <div
+                    className="mb-4"
+                    style={{ opacity: 0, animation: "fadeUp 0.4s ease-out 0.82s forwards" }}
+                  >
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/50">
+                      Step 2 of 4
                     </p>
-                    <div className="mx-auto mt-2 h-px w-32 bg-white/15">
-                      <div
-                        className="h-full bg-white/50 transition-all duration-500"
-                        style={{ width: step === "duration" ? "33%" : "66%" }}
-                      />
+                    <div className="mx-auto mt-2 h-px w-28 bg-white/12">
+                      <div className="h-full w-1/3 bg-white/45" />
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-white/[0.18] bg-white/[0.07] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm md:p-8">
-                    {step === "duration" && (
-                      <>
-                        <p className="mb-5 text-2xl font-light tracking-tight text-white">
-                          How long has it been present?
-                        </p>
-                        <div className="space-y-2.5">
-                          {["Less than 6 months", "6 to 24 months", "More than 2 years"].map((value) => (
-                            <button
-                              key={value}
-                              type="button"
-                              onClick={() => {
-                                setDuration(value);
-                                setStep("status");
-                              }}
-                              className="group flex w-full items-center justify-between rounded-xl border border-white/[0.15] bg-white/[0.06] px-5 py-4 text-left text-white/90 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.12] hover:text-white active:scale-[0.98]"
-                            >
-                              <span className="text-[18px] font-light">{value}</span>
-                              <span className="text-white/40 transition-colors group-hover:text-white/70" aria-hidden="true">›</span>
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
-
-                    {step === "status" && (
-                      <>
+                  {/* Card */}
+                  <div
+                    className="rounded-2xl border border-white/[0.14] bg-white/[0.06] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] md:p-7"
+                    style={{ opacity: 0, animation: "slideUpSpring 0.6s ease-out 0.88s forwards" }}
+                    role="region"
+                    aria-label="Step 2 of 4"
+                  >
+                    <p className="mb-5 text-[22px] font-light tracking-tight text-white">
+                      How long has it been present?
+                    </p>
+                    <div className="space-y-2.5">
+                      {["Less than 6 months", "6 to 24 months", "More than 2 years"].map((value) => (
                         <button
+                          key={value}
                           type="button"
-                          onClick={() => setStep("duration")}
-                          className="mb-5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/55 transition-colors hover:text-white/80"
+                          onClick={() => { setDuration(value); setStep("status"); }}
+                          className="group flex w-full items-center justify-between rounded-xl border border-white/[0.13] bg-white/[0.05] px-5 py-4 text-left text-white/85 transition-all duration-200 hover:border-white/22 hover:bg-white/[0.10] hover:text-white active:scale-[0.98]"
                         >
-                          <span aria-hidden="true">←</span> Back
+                          <span className="text-[17px] font-light">{value}</span>
+                          <span className="text-white/35 transition-colors group-hover:text-white/65" aria-hidden="true">›</span>
                         </button>
-                        <p className="mb-5 text-2xl font-light tracking-tight text-white">
-                          Has a doctor recommended knee replacement?
-                        </p>
-                        <div className="space-y-2.5">
-                          {[
-                            "Yes, it is scheduled",
-                            "Yes, but I am waiting",
-                            "Not yet",
-                            "Had a replacement — still in pain",
-                          ].map((value) => (
-                            <button
-                              key={value}
-                              type="button"
-                              onClick={() => {
-                                setReplacementStatus(value);
-                                setStep("zip");
-                              }}
-                              className="group flex w-full items-center justify-between rounded-xl border border-white/[0.15] bg-white/[0.06] px-5 py-4 text-left text-white/90 transition-all duration-200 hover:border-white/25 hover:bg-white/[0.12] hover:text-white active:scale-[0.98]"
-                            >
-                              <span className="text-[18px] font-light">{value}</span>
-                              <span className="text-white/40 transition-colors group-hover:text-white/70" aria-hidden="true">›</span>
-                            </button>
-                          ))}
-                        </div>
-                      </>
-                    )}
+                      ))}
+                    </div>
                   </div>
-                </>
-              )}
+                </div>
+              </div>
+            )}
 
-              {/* Step 4: analyzing phase — centered, no card */}
-              {step === "zip" && analyzing && (
+            {/* ── Step 3 ── */}
+            {step === "status" && (
+              <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
+                <div className="w-full max-w-lg">
+                  <div className="mb-4">
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/50">
+                      Step 3 of 4
+                    </p>
+                    <div className="mx-auto mt-2 h-px w-28 bg-white/12">
+                      <div className="h-full w-2/3 bg-white/45 transition-all duration-500" />
+                    </div>
+                  </div>
+                  <div
+                    className="rounded-2xl border border-white/[0.14] bg-white/[0.06] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] md:p-7"
+                    role="region"
+                    aria-label="Step 3 of 4"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setStep("duration")}
+                      className="mb-5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/75"
+                    >
+                      <span aria-hidden="true">←</span> Back
+                    </button>
+                    <p className="mb-5 text-[22px] font-light tracking-tight text-white">
+                      Has a doctor recommended knee replacement?
+                    </p>
+                    <div className="space-y-2.5">
+                      {[
+                        "Yes, it is scheduled",
+                        "Yes, but I am waiting",
+                        "Not yet",
+                        "Had a replacement — still in pain",
+                      ].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => { setReplacementStatus(value); setStep("zip"); }}
+                          className="group flex w-full items-center justify-between rounded-xl border border-white/[0.13] bg-white/[0.05] px-5 py-4 text-left text-white/85 transition-all duration-200 hover:border-white/22 hover:bg-white/[0.10] hover:text-white active:scale-[0.98]"
+                        >
+                          <span className="text-[17px] font-light">{value}</span>
+                          <span className="text-white/35 transition-colors group-hover:text-white/65" aria-hidden="true">›</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── Step 4: zip / analyzing / review ── */}
+            {step === "zip" && (
+              <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
+                <div className="w-full max-w-lg">
+
+            {analyzing && (
                 <div className="flex flex-col items-center justify-center gap-5 py-16">
                   <p className="animate-pulse text-[12px] uppercase tracking-[0.22em] text-white/60">
                     Analyzing your inputs…
@@ -616,7 +643,7 @@ export function HomeExperience() {
                 </div>
               )}
 
-              {step === "zip" && !analyzing && reviewVisible && (() => {
+            {!analyzing && reviewVisible && (() => {
                 const { statement, credential } = getPersonalizedReview(replacementStatus, duration);
                 return (
                   <div className="w-full">
@@ -789,6 +816,8 @@ export function HomeExperience() {
               })()}
             </div>
           </div>
+        )}
+      </div>
         )}
       </div>
       </AssessmentErrorBoundary>

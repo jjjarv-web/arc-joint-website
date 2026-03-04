@@ -444,10 +444,13 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       return;
     }
     const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const duration = prefersReducedMotion ? 0 : 0.35;
+    const dur = prefersReducedMotion ? 0 : 0.3;
+    // Cinematic body exit: scale + fade so the body feels like it's receding
+    gsap.to(".knee-image-shell", { autoAlpha: 0, scale: 0.95, duration: dur, ease: "power2.out", overwrite: "auto" });
+    gsap.to(".knee-knee-glow", { autoAlpha: 0, scale: 1.1, duration: dur, ease: "power2.out", overwrite: "auto" });
     gsap.to(
-      [".knee-image-shell", ".knee-headline", ".knee-step-label", ".knee-zone-hint", ".knee-interaction-field", ".knee-trust-copy"],
-      { autoAlpha: 0, duration, ease: "power2.out", overwrite: "auto" }
+      [".knee-headline", ".knee-step-label", ".knee-zone-hint", ".knee-interaction-field", ".knee-trust-copy"],
+      { autoAlpha: 0, duration: dur * 0.7, ease: "power2.out", overwrite: "auto" }
     );
   }, [visible]);
 
@@ -466,10 +469,34 @@ export function KneeSelector({ selectedRegion, onSelect, visible = true }: KneeS
       window.clearTimeout(pulseTimeoutRef.current);
     }
     setPressedRegion(region);
+
+    // Immediate tap acknowledgement — like a button press:
+    // Knee glow expands as a selection ring, body dims slightly.
+    gsap.to(".knee-knee-glow", {
+      scale: 1.35,
+      autoAlpha: 0.5,
+      duration: 0.18,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+    gsap.to(".knee-image-shell", {
+      autoAlpha: 0.7,
+      scale: 0.97,
+      duration: 0.18,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+    gsap.to([".knee-headline", ".knee-step-label", ".knee-zone-hint", ".knee-interaction-field", ".knee-trust-copy"], {
+      autoAlpha: 0,
+      duration: 0.22,
+      ease: "power2.out",
+      overwrite: "auto",
+    });
+
     pulseTimeoutRef.current = window.setTimeout(() => {
       onSelect(region);
       setPressedRegion("");
-    }, 180);
+    }, 240);
   };
 
   const inferRegion = (xNorm: number, yNorm: number): KneePainRegion | null => {
