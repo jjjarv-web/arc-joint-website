@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import type { SearchResult } from "@/lib/types";
 import { LocationCard } from "@/components/experience/LocationCard";
@@ -13,8 +13,20 @@ interface LocationsSearchResultsProps {
 }
 
 export function LocationsSearchResults({ results, zip, area }: LocationsSearchResultsProps) {
-  const [activeLocationId, setActiveLocationId] = useState(results[0]?.id ?? "");
-  const filtered = filterByTreatmentArea(results, area);
+  const filtered = useMemo(
+    () => filterByTreatmentArea(results, area),
+    [results, area]
+  );
+  const [activeLocationId, setActiveLocationId] = useState(filtered[0]?.id ?? "");
+
+  // When filter changes, expand the closest matching location (first in filtered list)
+  useEffect(() => {
+    if (filtered.length > 0) {
+      setActiveLocationId(filtered[0].id);
+    } else {
+      setActiveLocationId("");
+    }
+  }, [area, filtered]);
 
   const baseUrl = `/locations?zip=${zip}`;
 

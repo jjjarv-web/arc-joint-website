@@ -26,6 +26,15 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
     [results, treatmentAreaFilter]
   );
 
+  // When filter changes, expand the closest matching location (first in filtered list)
+  useEffect(() => {
+    if (filteredResults.length > 0) {
+      setActiveLocationId(filteredResults[0].id);
+    } else {
+      setActiveLocationId("");
+    }
+  }, [treatmentAreaFilter, filteredResults]);
+
   // Lock body scroll while open
   useEffect(() => {
     if (!open) return;

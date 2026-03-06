@@ -382,10 +382,28 @@ export function HomeExperience() {
     [locationResults, bottomTreatmentAreaFilter]
   );
 
+  // When bottom filter changes, expand the closest matching location
+  useEffect(() => {
+    if (filteredBottomResults.length > 0) {
+      setActiveBottomLocationId(filteredBottomResults[0].id);
+    } else {
+      setActiveBottomLocationId("");
+    }
+  }, [bottomTreatmentAreaFilter, filteredBottomResults]);
+
   const filteredAssessmentResults = useMemo(
     () => filterByTreatmentArea(results, assessmentTreatmentAreaFilter),
     [results, assessmentTreatmentAreaFilter]
   );
+
+  // When filter changes, expand the closest matching location (first in filtered list)
+  useEffect(() => {
+    if (filteredAssessmentResults.length > 0) {
+      setActiveLocationId(filteredAssessmentResults[0].id);
+    } else {
+      setActiveLocationId("");
+    }
+  }, [assessmentTreatmentAreaFilter, filteredAssessmentResults]);
 
   // Scroll bottom ZIP results into view when they appear
   useEffect(() => {
