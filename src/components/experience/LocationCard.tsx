@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { SearchResult } from "@/lib/types";
 
 const PROCEDURE_LABELS: Record<string, string> = {
@@ -13,6 +13,7 @@ interface LocationCardProps {
   isClosest: boolean;
   variant: "dark" | "light";
   onSelect: (id: string) => void;
+  onProfileClick?: () => void;
 }
 
 const tokens = {
@@ -48,14 +49,28 @@ const tokens = {
   },
 } as const;
 
-export function LocationCard({ location, isActive, isClosest, variant, onSelect }: LocationCardProps) {
+export function LocationCard({ location, isActive, isClosest, variant, onSelect, onProfileClick }: LocationCardProps) {
+  const router = useRouter();
   const t = tokens[variant];
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    router.push(`/locations/${location.slug}`);
+    onProfileClick?.();
+  };
+
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => onSelect(location.id)}
-      className={`w-full rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect(location.id);
+        }
+      }}
+      className={`w-full cursor-pointer rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
         isActive ? t.cardActive : t.cardResting
       }`}
     >
@@ -119,17 +134,17 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect 
 
             {/* Profile link */}
             <div className="mt-4 text-center">
-              <Link
-                href={`/locations/${location.slug}`}
-                onClick={(e) => e.stopPropagation()}
-                className={`text-[11px] uppercase tracking-[0.14em] transition-colors ${t.profileLink}`}
+              <button
+                type="button"
+                onClick={handleProfileClick}
+                className={`cursor-pointer border-0 bg-transparent p-0 font-inherit text-[11px] uppercase tracking-[0.14em] transition-colors ${t.profileLink}`}
               >
                 View full profile →
-              </Link>
+              </button>
             </div>
           </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }

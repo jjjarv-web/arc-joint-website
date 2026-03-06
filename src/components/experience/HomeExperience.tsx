@@ -147,6 +147,7 @@ export function HomeExperience() {
   const productSectionRef = useRef<HTMLElement>(null);
   const kneeSectionRef = useRef<HTMLDivElement>(null);
   const assessmentPanelRef = useRef<HTMLDivElement>(null);
+  const bottomLocationResultsRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
@@ -373,6 +374,13 @@ export function HomeExperience() {
     () => (locationResults.length > 0 ? `${locationResults.length} locations` : ""),
     [locationResults]
   );
+
+  // Scroll bottom ZIP results into view when they appear
+  useEffect(() => {
+    if (locationResults.length > 0 && bottomLocationResultsRef.current) {
+      bottomLocationResultsRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [locationResults.length]);
 
   const resetAssessment = () => {
     zipTlRef.current?.kill();
@@ -777,23 +785,24 @@ export function HomeExperience() {
                       />
 
                       <div style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 3.2s forwards" }}>
-                        <p className="mb-2 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
-                          Enter your ZIP to find a location near you.
+                        <p className="mb-6 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
+                          Find an ARC location near you
                         </p>
                         <form onSubmit={runSearch}>
                           <div className="relative overflow-hidden rounded-2xl p-px">
+                            {/* Breathing glow — Apple-style, stops once search has run */}
                             <div
-                              className="absolute inset-[-100%]"
+                              className="pointer-events-none absolute inset-0 rounded-2xl"
                               style={{
-                                background: "conic-gradient(from 0deg, transparent 0deg, transparent 120deg, rgba(138,210,255,0.55) 180deg, rgba(255,255,255,0.3) 200deg, rgba(138,210,255,0.55) 220deg, transparent 280deg, transparent 360deg)",
-                                animation: results.length > 0 || loading ? "none" : "borderSpin 3.5s linear infinite",
+                                boxShadow: "0 0 24px rgba(138,210,255,0.5)",
+                                animation: results.length > 0 || loading ? "none" : "breathingGlow 5s ease-in-out infinite",
                                 opacity: results.length > 0 ? 0 : 1,
                                 transition: "opacity 0.4s ease-out",
                               }}
                             />
-                            <div className="relative rounded-[15px] px-5 py-5" style={{ backgroundColor: "#1a1a1a" }}>
-                              <label htmlFor="zip-input" className="mb-2 block text-[13px] font-light text-white/70">
-                                Enter your ZIP code
+                            <div className="relative rounded-[15px] border border-white/[0.08] bg-white/[0.04] px-5 py-5 transition-colors duration-200 focus-within:border-white/[0.12] focus-within:bg-white/[0.06]">
+                              <label htmlFor="zip-input" className="mb-2 block text-[13px] font-light text-white/60">
+                                ZIP Code
                               </label>
                               <div className="flex items-center gap-3">
                                 <input
@@ -805,9 +814,9 @@ export function HomeExperience() {
                                   value={zip}
                                   onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
                                   placeholder="e.g. 90210"
-                                  className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/25 md:text-[24px]"
+                                  className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/45 md:text-[24px]"
                                 />
-                                <span className="shrink-0 text-[12px] tabular-nums text-white/50">{zip.length}/5</span>
+                                <span className="shrink-0 text-[12px] tabular-nums text-white/40">{zip.length}/5</span>
                               </div>
                               <div className="mt-3 h-px w-full rounded-full bg-white/10">
                                 <div
@@ -824,7 +833,7 @@ export function HomeExperience() {
                           <button
                             type="submit"
                             disabled={zip.length !== 5 || loading}
-                            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98]"
+                            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98] disabled:scale-[0.98] disabled:opacity-70"
                             style={{
                               backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
                               color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
@@ -837,12 +846,12 @@ export function HomeExperience() {
                                 <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
                                 Searching…
                               </span>
-                            ) : "Show Locations Near Me"}
+                            ) : "Find Locations"}
                           </button>
                         </form>
                         {results.length === 0 && !loading && (
                           <p className="mt-4 text-center text-[12px] font-light text-white/45">
-                            Used by patients across the country to find ARC-trained locations.
+                            Used nationwide to find ARC-trained care locations.
                           </p>
                         )}
                         {error && <p className="mt-4 text-center text-sm text-red-400/70">{error}</p>}
@@ -919,7 +928,7 @@ export function HomeExperience() {
           <h3 className="text-[clamp(44px,6vw,72px)] font-semibold leading-tight text-black">
             Let&apos;s understand
             <br />
-            your knee pain.
+            your pain.
           </h3>
           <button
             type="button"
@@ -978,7 +987,7 @@ export function HomeExperience() {
             <p className="mt-4 text-sm text-red-500">{locationError}</p>
           )}
           {locationResults.length > 0 && (
-            <div className="mt-6 w-full text-left animate-[fadeIn_0.5s_ease-out_forwards]">
+            <div ref={bottomLocationResultsRef} className="mt-6 w-full text-left animate-[fadeIn_0.5s_ease-out_forwards]">
               <div className="mb-3 flex items-center justify-between">
                 <p className="text-[10px] uppercase tracking-[0.22em] text-black/45">Near {locationZip}</p>
                 <p className="text-[10px] text-black/35">{locationNearestLabel}</p>

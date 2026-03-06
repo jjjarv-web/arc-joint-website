@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
 import type { SearchResult } from "@/lib/types";
 import { LocationCard } from "@/components/experience/LocationCard";
 
@@ -16,6 +17,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
   const [results, setResults] = useState<SearchResult[]>([]);
   const [activeLocationId, setActiveLocationId] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsListRef = useRef<HTMLUListElement>(null);
 
   // Lock body scroll while open
   useEffect(() => {
@@ -35,6 +37,17 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
     return () => window.removeEventListener("keydown", handler);
   }, [open, onClose]);
 
+  // Staggered reveal when results appear
+  useEffect(() => {
+    if (results.length === 0 || !resultsListRef.current) return;
+    const items = resultsListRef.current.querySelectorAll("li");
+    gsap.fromTo(
+      items,
+      { opacity: 0, y: 16 },
+      { opacity: 1, y: 0, duration: 0.45, stagger: 0.06, ease: "power2.out" }
+    );
+  }, [results.length]);
+
   const runSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (zip.length !== 5) return;
@@ -43,8 +56,13 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
     setResults([]);
     setActiveLocationId("");
 
+    const minDelay = new Promise((r) => setTimeout(r, 300));
+
     try {
-      const response = await fetch(`/api/locations/search?zip=${encodeURIComponent(zip)}`);
+      const [_, response] = await Promise.all([
+        minDelay,
+        fetch(`/api/locations/search?zip=${encodeURIComponent(zip)}`),
+      ]);
       const data = (await response.json()) as { error?: string; results?: SearchResult[] };
       if (!response.ok) throw new Error(data.error || "Unable to search locations right now.");
       const incoming = data.results || [];
@@ -84,26 +102,26 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
       <div className="mx-auto mt-10 w-full max-w-lg">
         {/* Header */}
         <p className="mb-1 text-[11px] uppercase tracking-[0.26em] text-white/35">ARC Location Network</p>
-        <p className="mb-8 text-[28px] font-light leading-tight tracking-tight text-white md:text-[34px]">
-          Find a location near you.
+        <p className="mb-20 text-[28px] font-light leading-tight tracking-tight text-white md:mb-24 md:text-[34px]">
+          Find an ARC location near you
         </p>
 
         {/* ZIP form */}
         <form onSubmit={runSearch}>
           <div className="relative overflow-hidden rounded-2xl p-px">
-            {/* Spinning border light — stops once search has run */}
+            {/* Breathing glow — Apple-style, stops once search has run */}
             <div
-              className="absolute inset-[-100%]"
+              className="pointer-events-none absolute inset-0 rounded-2xl"
               style={{
-                background: "conic-gradient(from 0deg, transparent 0deg, transparent 120deg, rgba(138,210,255,0.55) 180deg, rgba(255,255,255,0.3) 200deg, rgba(138,210,255,0.55) 220deg, transparent 280deg, transparent 360deg)",
-                animation: results.length > 0 || loading ? "none" : "borderSpin 3.5s linear infinite",
+                boxShadow: "0 0 24px rgba(138,210,255,0.5)",
+                animation: results.length > 0 || loading ? "none" : "breathingGlow 5s ease-in-out infinite",
                 opacity: results.length > 0 ? 0 : 1,
                 transition: "opacity 0.4s ease-out",
               }}
             />
-            <div className="relative rounded-[15px] px-5 py-5" style={{ backgroundColor: "#1a1a1a" }}>
+            <div className="relative rounded-[15px] border border-white/[0.08] bg-white/[0.04] px-5 py-5 transition-colors duration-200 focus-within:border-white/[0.12] focus-within:bg-white/[0.06]">
               <label htmlFor="overlay-zip-input" className="mb-2 block text-[13px] font-light text-white/60">
-                Enter your ZIP code
+                ZIP Code
               </label>
               <div className="flex items-center gap-3">
                 <input
@@ -116,7 +134,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
                   value={zip}
                   onChange={(e) => setZip(e.target.value.replace(/\D/g, ""))}
                   placeholder="e.g. 90210"
-                  className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/25"
+                  className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/45"
                 />
                 <span className="shrink-0 text-[12px] tabular-nums text-white/40">{zip.length}/5</span>
               </div>
@@ -136,7 +154,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
           <button
             type="submit"
             disabled={zip.length !== 5 || loading}
-            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-500 enabled:active:scale-[0.98]"
+            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98] disabled:scale-[0.98] disabled:opacity-70"
             style={{
               backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
               color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
@@ -149,7 +167,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
                 Searching…
               </span>
-            ) : "Show Locations Near Me"}
+            ) : "Find Locations"}
           </button>
         </form>
 
@@ -157,7 +175,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
 
         {/* Results */}
         {results.length > 0 && (
-          <div className="mt-8" style={{ opacity: 0, animation: "fadeIn 0.5s ease-out 0.1s forwards" }}>
+          <div className="mt-8">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">Near {zip}</p>
               <div className="flex items-center gap-3">
@@ -172,7 +190,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
               </div>
             </div>
 
-            <ul className="space-y-2">
+            <ul ref={resultsListRef} className="space-y-2">
               {results.map((location, index) => (
                 <li key={location.id}>
                   <LocationCard
@@ -181,6 +199,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
                     isClosest={index === 0}
                     variant="dark"
                     onSelect={setActiveLocationId}
+                    onProfileClick={onClose}
                   />
                 </li>
               ))}
@@ -190,7 +209,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
 
         {results.length === 0 && !loading && !error && (
           <p className="mt-5 text-center text-[12px] font-light text-white/35">
-            Used by patients across the country to find ARC-trained locations.
+            Used nationwide to find ARC-trained care locations.
           </p>
         )}
       </div>

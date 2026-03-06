@@ -30,6 +30,12 @@ body {
   to   { transform: rotate(360deg); }
 }
 
+/* Apple-style breathing glow: opacity 0.35 → 0.55 → 0.35, ~5s */
+@keyframes breathingGlow {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.55; }
+}
+
 @keyframes subtlePulse {
   0%   { transform: scale(1); }
   40%  { transform: scale(1.02); }
