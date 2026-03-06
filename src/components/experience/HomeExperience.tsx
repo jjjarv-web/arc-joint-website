@@ -7,44 +7,90 @@ import { useGSAP } from "@gsap/react";
 import Link from "next/link";
 import type { SearchResult } from "@/lib/types";
 import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
-import { KneeSelector, type KneePainRegion } from "@/components/experience/KneeSelector";
+import { BodySelector } from "@/components/experience/BodySelector";
+import type { JointRegion } from "@/lib/types";
 import { ProviderCard } from "@/components/experience/ProviderCard";
+import { FindProviderOverlay } from "@/components/FindProviderOverlay";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 type AssessmentStep = "knee" | "duration" | "status" | "zip";
-type PainRegion = KneePainRegion | "";
+type PainRegion = JointRegion | "";
 
+// ── Joint display helpers ─────────────────────────────────────────────────────
+const JOINT_DISPLAY_NAME: Record<JointRegion, string> = {
+  cervical:        "cervical spine",
+  "left-shoulder": "left shoulder",
+  "right-shoulder":"right shoulder",
+  lumbar:          "lower back",
+  "left-hip":      "left hip",
+  "right-hip":     "right hip",
+  "left-knee":     "left knee",
+  "right-knee":    "right knee",
+  "left-ankle":    "left ankle",
+  "right-ankle":   "right ankle",
+};
 
-function getPersonalizedReview(status: string, duration?: string): { statement: string; credential: string } {
-  if (status.includes("scheduled")) {
+// Generic joint group for copy purposes
+type JointGroup = "spine" | "shoulder" | "hip" | "knee" | "ankle";
+function jointGroup(region: JointRegion): JointGroup {
+  if (region === "cervical" || region === "lumbar") return "spine";
+  if (region.includes("shoulder")) return "shoulder";
+  if (region.includes("hip")) return "hip";
+  if (region.includes("ankle")) return "ankle";
+  return "knee";
+}
+
+function getPersonalizedReview(
+  region: JointRegion | "",
+  status: string,
+  duration?: string
+): { statement: string; credential: string } {
+  const name = region ? JOINT_DISPLAY_NAME[region] : "joint";
+  const group = region ? jointGroup(region) : "knee";
+
+  // Post-procedure pain — applies to all joint types
+  if (status.includes("still in pain")) {
     return {
-      statement: "Knee replacement is major surgery — and about 1 in 5 people still report ongoing pain after TKA.",
-      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options that are minimally invasive and typically outpatient, before moving forward with replacement.",
+      statement: `Most people expect surgery to end the pain — but research shows a meaningful percentage of patients still report persistent pain after ${name} procedures.`,
+      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options specifically for post-procedure pain. Peer-reviewed evidence supports that PNS can reduce persistent pain and improve function in appropriate patients.",
     };
   }
+
+  // Scheduled for surgery
+  if (status.includes("scheduled")) {
+    const procedureName =
+      group === "spine" ? "spinal surgery" :
+      group === "shoulder" ? "shoulder surgery" :
+      group === "hip" ? "hip replacement" :
+      group === "ankle" ? "ankle surgery" :
+      "knee replacement";
+    return {
+      statement: `${procedureName.charAt(0).toUpperCase() + procedureName.slice(1)} is a major commitment — and not every patient achieves full relief afterward.`,
+      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options that are minimally invasive and typically outpatient, before moving forward with surgery.",
+    };
+  }
+
+  // Waiting / pausing before surgery
   if (status.includes("waiting")) {
     return {
-      statement: "Pausing before replacement is common — recovery can extend well beyond the first few weeks, and about 20% still experience persistent pain after TKA.",
+      statement: `Pausing before surgery is common — recovery can extend well beyond the first few weeks, and outcomes vary more than most patients expect.`,
       credential: "Some orthopedic surgeons and neurosurgeons now offer ARC evaluations focused on pain relief and improved mobility using minimally invasive, typically outpatient approaches.",
     };
   }
-  if (status.includes("still in pain")) {
-    return {
-      statement: "Most people expect replacement to end the pain — but research shows about 1 in 5 patients still report persistent pain after TKA.",
-      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options specifically for post-replacement pain. Peer-reviewed evidence supports that PNS can reduce persistent pain and improve function in appropriate patients.",
-    };
-  }
+
+  // No procedure recommended yet
   const isEarly = duration?.toLowerCase().includes("less than 6");
   return {
     statement: isEarly
-      ? "If replacement hasn't been recommended yet, you're in the ideal ARC moment — get clarity before committing to irreversible surgery."
-      : "Exploring options before replacement is the right move — catching it early can open doors that aren't available later.",
+      ? `If surgery hasn't been recommended yet, you're in the ideal ARC moment — get clarity before committing to anything irreversible.`
+      : `Exploring options before surgery is the right move — catching it early can open doors that aren't available later.`,
     credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC approaches that are minimally invasive and typically outpatient, designed to help preserve future options.",
   };
 }
 
 export function HomeExperience() {
+  const [heroCTAOpen, setHeroCTAOpen] = useState(false);
   const [step, setStep] = useState<AssessmentStep>("knee");
   const [painRegion, setPainRegion] = useState<PainRegion>("");
   const [duration, setDuration] = useState("");
@@ -118,10 +164,16 @@ export function HomeExperience() {
           "-=0.35"
         )
         .fromTo(
+          ".hero-cta",
+          { autoAlpha: 0, y: 10 },
+          { autoAlpha: 1, y: 0, duration: 0.9 },
+          "-=0.2"
+        )
+        .fromTo(
           ".hero-scroll-hint",
           { autoAlpha: 0 },
           { autoAlpha: 1, duration: 1 },
-          "+=0.55"
+          "+=0.4"
         );
 
       const reveals = gsap.utils.toArray<HTMLElement>("[data-reveal]");
@@ -392,7 +444,7 @@ export function HomeExperience() {
     }
   };
 
-  const handlePainSelection = (region: KneePainRegion) => {
+  const handlePainSelection = (region: JointRegion) => {
     setPainRegion(region);
     setStep("duration");
   };
@@ -440,10 +492,22 @@ export function HomeExperience() {
         <p className="hero-subtitle mt-3 text-[13px] uppercase tracking-[0.32em] text-black/55 md:text-[14px]">
           Alternative Replacement Care
         </p>
-        <p className="hero-scroll-hint mt-40 text-xs text-black/35">
-          Scroll to begin
+        <button
+          type="button"
+          onClick={() => setHeroCTAOpen(true)}
+          className="hero-cta mt-10 group inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/90 px-5 py-2.5 text-[14px] font-medium tracking-tight text-black shadow-[0_4px_14px_rgba(0,0,0,0.07),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.95)_inset]"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+            <circle cx="12" cy="9" r="2.5" />
+          </svg>
+          Find a location near you
+        </button>
+        <p className="hero-scroll-hint absolute bottom-14 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.18em] text-black/25">
+          Scroll to explore
         </p>
       </section>
+      <FindProviderOverlay open={heroCTAOpen} onClose={() => setHeroCTAOpen(false)} />
 
       <section className="disruption-section relative z-20 flex min-h-screen items-center justify-center bg-white px-6 py-20">
         <div className="disruption-inner mx-auto w-full max-w-4xl text-center [perspective:1200px]">
@@ -534,7 +598,7 @@ export function HomeExperience() {
 
       <AssessmentErrorBoundary>
       <div ref={kneeSectionRef} className="relative z-30 min-h-screen bg-black">
-        <KneeSelector
+        <BodySelector
           selectedRegion={painRegion}
           onSelect={handlePainSelection}
           visible={step === "knee"}
@@ -554,7 +618,7 @@ export function HomeExperience() {
                     style={{ opacity: 0, animation: "fadeUp 0.55s ease-out 0.2s forwards" }}
                     aria-live="polite"
                   >
-                    Let&apos;s look at your knee pain.
+                    Let&apos;s look at your {painRegion ? JOINT_DISPLAY_NAME[painRegion] : "pain"}.
                   </p>
 
                   {/* Step indicator */}
@@ -623,14 +687,14 @@ export function HomeExperience() {
                       <span aria-hidden="true">←</span> Back
                     </button>
                     <p className="mb-5 text-[22px] font-light tracking-tight text-white">
-                      Has a doctor recommended knee replacement?
+                      Has a doctor recommended surgery for your {painRegion ? JOINT_DISPLAY_NAME[painRegion] : "pain"}?
                     </p>
                     <div className="space-y-2.5">
                       {[
                         "Yes, it is scheduled",
                         "Yes, but I am waiting",
                         "Not yet",
-                        "Had a replacement — still in pain",
+                        "Had surgery — still in pain",
                       ].map((value) => (
                         <button
                           key={value}
@@ -671,7 +735,7 @@ export function HomeExperience() {
               )}
 
             {!analyzing && reviewVisible && (() => {
-                const { statement, credential } = getPersonalizedReview(replacementStatus, duration);
+                const { statement, credential } = getPersonalizedReview(painRegion, replacementStatus, duration);
                 return (
                   <div className="w-full">
                     {/* Back */}
@@ -689,7 +753,7 @@ export function HomeExperience() {
                       style={{ opacity: 0, animation: "fadeIn 0.5s ease-out 0.2s forwards" }}
                       className="mb-3 text-[11px] uppercase tracking-[0.26em] text-white/50"
                     >
-                      Your Knee Pain Review
+                      Your {painRegion ? JOINT_DISPLAY_NAME[painRegion].charAt(0).toUpperCase() + JOINT_DISPLAY_NAME[painRegion].slice(1) : "Pain"} Review
                     </p>
 
                     {/* Review + ZIP form — GSAP collapses this on submit */}

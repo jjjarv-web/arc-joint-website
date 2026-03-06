@@ -1,5 +1,17 @@
 export type Procedure = "PNS";
 
+export type JointRegion =
+  | "cervical"
+  | "left-shoulder"
+  | "right-shoulder"
+  | "lumbar"
+  | "left-hip"
+  | "right-hip"
+  | "left-knee"
+  | "right-knee"
+  | "left-ankle"
+  | "right-ankle";
+
 export interface Provider {
   id: string;
   slug: string;
