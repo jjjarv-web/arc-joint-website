@@ -11,6 +11,11 @@ import { BodySelector } from "@/components/experience/BodySelector";
 import type { JointRegion } from "@/lib/types";
 import { LocationCard } from "@/components/experience/LocationCard";
 import { FindLocationOverlay } from "@/components/FindLocationOverlay";
+import {
+  TREATMENT_AREA_FILTERS,
+  filterByTreatmentArea,
+  jointRegionToTreatmentAreaId,
+} from "@/lib/locationFilters";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -107,6 +112,8 @@ export function HomeExperience() {
   const [locationResults, setLocationResults] = useState<SearchResult[]>([]);
   const [activeLocationId, setActiveLocationId] = useState("");
   const [activeBottomLocationId, setActiveBottomLocationId] = useState("");
+  const [bottomTreatmentAreaFilter, setBottomTreatmentAreaFilter] = useState<string | null>(null);
+  const [assessmentTreatmentAreaFilter, setAssessmentTreatmentAreaFilter] = useState<string | null>(null);
   const [zipExpanded, setZipExpanded] = useState(false);
 
   const isCollapsed = results.length > 0 && !zipExpanded;
@@ -369,10 +376,14 @@ export function HomeExperience() {
     { scope: container }
   );
 
-  const nearestLabel = useMemo(() => (results.length > 0 ? `${results.length} locations` : ""), [results]);
-  const locationNearestLabel = useMemo(
-    () => (locationResults.length > 0 ? `${locationResults.length} locations` : ""),
-    [locationResults]
+  const filteredBottomResults = useMemo(
+    () => filterByTreatmentArea(locationResults, bottomTreatmentAreaFilter),
+    [locationResults, bottomTreatmentAreaFilter]
+  );
+
+  const filteredAssessmentResults = useMemo(
+    () => filterByTreatmentArea(results, assessmentTreatmentAreaFilter),
+    [results, assessmentTreatmentAreaFilter]
   );
 
   // Scroll bottom ZIP results into view when they appear
@@ -393,6 +404,7 @@ export function HomeExperience() {
     setError("");
     setResults([]);
     setActiveLocationId("");
+    setAssessmentTreatmentAreaFilter(null);
     setLoading(false);
   };
 
@@ -403,8 +415,7 @@ export function HomeExperience() {
     setResults([]);
 
     try {
-      const jointParam = painRegion ? `&joint=${encodeURIComponent(painRegion)}` : "";
-      const response = await fetch(`/api/locations/search?zip=${encodeURIComponent(zip)}${jointParam}`);
+      const response = await fetch(`/api/locations/search?zip=${encodeURIComponent(zip)}`);
       const data = (await response.json()) as { error?: string; results?: SearchResult[] };
 
       if (!response.ok) {
@@ -416,6 +427,7 @@ export function HomeExperience() {
       if (incoming.length > 0) {
         setActiveLocationId(incoming[0].id);
         setZipExpanded(false);
+        setAssessmentTreatmentAreaFilter(jointRegionToTreatmentAreaId(painRegion));
       }
     } catch (requestError) {
       const message =
@@ -866,9 +878,13 @@ export function HomeExperience() {
                         style={{ backgroundColor: "#1a1a1a" }}
                       >
                         <div>
-                          <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Near {zip}</p>
+                          <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">
+                            {results.length} Location{results.length !== 1 ? "s" : ""} Near {zip}
+                          </p>
                           <p className="mt-0.5 text-[14px] font-light text-white/70">
-                            {results.length} location{results.length !== 1 ? "s" : ""} found
+                            {assessmentTreatmentAreaFilter
+                              ? `${filteredAssessmentResults.length} for selected area`
+                              : "All locations"}
                           </p>
                         </div>
                         <button
@@ -881,30 +897,81 @@ export function HomeExperience() {
                         </button>
                       </div>
 
-                      {/* Location results */}
+                      {/* Filter + Location results */}
                       {results.length > 0 && (
                       <div className="mt-6">
-                        <div className="mb-3 flex items-center justify-between">
-                          <p className="text-[10px] uppercase tracking-[0.22em] text-white/55">Near {zip}</p>
-                          <p className="text-[10px] text-white/40">{nearestLabel}</p>
+                        <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-white/45">
+                          Filter by treatment area
+                        </p>
+                        <div className="mb-4 flex flex-wrap gap-2">
+                          {TREATMENT_AREA_FILTERS.map((area) => (
+                            <button
+                              key={area.id}
+                              type="button"
+                              onClick={() =>
+                                setAssessmentTreatmentAreaFilter((prev) =>
+                                  prev === area.id ? null : area.id
+                                )
+                              }
+                              className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] transition-colors ${
+                                assessmentTreatmentAreaFilter === area.id
+                                  ? "border-white/30 bg-white/15 text-white"
+                                  : "border-white/20 text-white/60 hover:border-white/30 hover:text-white/80"
+                              }`}
+                            >
+                              {area.label}
+                            </button>
+                          ))}
                         </div>
 
                         <ul className="space-y-2">
-                          {results.map((location, index) => (
-                            <li key={location.id}>
-                              <LocationCard
-                                location={location}
-                                isActive={location.id === activeLocationId}
-                                isClosest={index === 0}
-                                variant="dark"
-                                onSelect={setActiveLocationId}
-                              />
+                          {filteredAssessmentResults.length > 0 ? (
+                            <>
+                              {filteredAssessmentResults.slice(0, 1).map((location) => (
+                                <li key={location.id}>
+                                  <LocationCard
+                                    location={location}
+                                    isActive={location.id === activeLocationId}
+                                    isClosest
+                                    variant="dark"
+                                    onSelect={setActiveLocationId}
+                                    zip={zip}
+                                    area={assessmentTreatmentAreaFilter}
+                                  />
+                                </li>
+                              ))}
+                              {filteredAssessmentResults.length > 1 && (
+                                <>
+                                  <li className="pt-2 pb-1">
+                                    <p className="text-[10px] uppercase tracking-[0.18em] text-white/35">
+                                      Other locations
+                                    </p>
+                                  </li>
+                                  {filteredAssessmentResults.slice(1).map((location) => (
+                                    <li key={location.id}>
+                                      <LocationCard
+                                        location={location}
+                                        isActive={location.id === activeLocationId}
+                                        isClosest={false}
+                                        variant="dark"
+                                        onSelect={setActiveLocationId}
+                                        zip={zip}
+                                        area={assessmentTreatmentAreaFilter}
+                                      />
+                                    </li>
+                                  ))}
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <li className="py-8 text-center text-[13px] font-light text-white/50">
+                              No locations near {zip} treat this area. Try a different filter or ZIP.
                             </li>
-                          ))}
+                          )}
                         </ul>
 
                         <Link
-                          href="/locations"
+                          href={`/locations?zip=${zip}${assessmentTreatmentAreaFilter ? `&area=${assessmentTreatmentAreaFilter}` : ""}`}
                           className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
                         >
                           See all locations →
@@ -989,26 +1056,81 @@ export function HomeExperience() {
           {locationResults.length > 0 && (
             <div ref={bottomLocationResultsRef} className="mt-6 w-full text-left animate-[fadeIn_0.5s_ease-out_forwards]">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-black/45">Near {locationZip}</p>
-                <p className="text-[10px] text-black/35">{locationNearestLabel}</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-black/45">
+                  {locationResults.length} Location{locationResults.length !== 1 ? "s" : ""} Near {locationZip}
+                </p>
+              </div>
+
+              <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-black/40">
+                Filter by treatment area
+              </p>
+              <div className="mb-4 flex flex-wrap gap-2">
+                {TREATMENT_AREA_FILTERS.map((area) => (
+                  <button
+                    key={area.id}
+                    type="button"
+                    onClick={() =>
+                      setBottomTreatmentAreaFilter((prev) => (prev === area.id ? null : area.id))
+                    }
+                    className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.1em] transition-colors ${
+                      bottomTreatmentAreaFilter === area.id
+                        ? "border-black/25 bg-black/10 text-black"
+                        : "border-black/15 text-black/50 hover:border-black/25 hover:text-black/70"
+                    }`}
+                  >
+                    {area.label}
+                  </button>
+                ))}
               </div>
 
               <ul className="space-y-2">
-                {locationResults.map((location, index) => (
-                  <li key={location.id}>
-                    <LocationCard
-                      location={location}
-                      isActive={location.id === activeBottomLocationId}
-                      isClosest={index === 0}
-                      variant="light"
-                      onSelect={setActiveBottomLocationId}
-                    />
+                {filteredBottomResults.length > 0 ? (
+                  <>
+                    {filteredBottomResults.slice(0, 1).map((location) => (
+                      <li key={location.id}>
+                        <LocationCard
+                          location={location}
+                          isActive={location.id === activeBottomLocationId}
+                          isClosest
+                          variant="light"
+                          onSelect={setActiveBottomLocationId}
+                          zip={locationZip}
+                          area={bottomTreatmentAreaFilter}
+                        />
+                      </li>
+                    ))}
+                    {filteredBottomResults.length > 1 && (
+                      <>
+                        <li className="pt-2 pb-1">
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-black/35">
+                            Other locations
+                          </p>
+                        </li>
+                        {filteredBottomResults.slice(1).map((location) => (
+                          <li key={location.id}>
+                            <LocationCard
+                              location={location}
+                              isActive={location.id === activeBottomLocationId}
+                              isClosest={false}
+                              variant="light"
+                              onSelect={setActiveBottomLocationId}
+                              zip={locationZip}
+                              area={bottomTreatmentAreaFilter}
+                            />
+                          </li>
+                        ))}
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <li className="py-8 text-center text-[13px] font-light text-black/50">
+                    No locations near {locationZip} treat this area. Try a different filter or ZIP.
                   </li>
-                ))}
+                )}
               </ul>
 
               <Link
-                href="/locations"
+                href={`/locations?zip=${locationZip}${bottomTreatmentAreaFilter ? `&area=${bottomTreatmentAreaFilter}` : ""}`}
                 className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-black/40 transition-colors hover:text-black/70"
               >
                 See all locations →

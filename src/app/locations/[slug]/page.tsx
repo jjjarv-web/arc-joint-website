@@ -2,10 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllLocations, getLocationBySlug } from "@/lib/locations";
+import { getTreatmentAreaLabels } from "@/lib/locationFilters";
 
 interface LocationPageProps {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ zip?: string; area?: string }>;
 }
+
+const PROCEDURE_LABELS: Record<string, string> = {
+  PNS: "Peripheral Nerve Stimulation",
+};
 
 export async function generateStaticParams() {
   return getAllLocations().map((location) => ({ slug: location.slug }));
@@ -44,13 +50,21 @@ const CREDIBILITY_SIGNALS = [
   },
 ];
 
-export default async function LocationPage({ params }: LocationPageProps) {
+export default async function LocationPage({ params, searchParams }: LocationPageProps) {
   const { slug } = await params;
+  const { zip, area } = await searchParams;
   const location = getLocationBySlug(slug);
 
   if (!location) {
     notFound();
   }
+
+  const backHref = zip
+    ? `/locations?zip=${zip}${area ? `&area=${area}` : ""}`
+    : "/locations";
+
+  const treatmentLabels = getTreatmentAreaLabels(location.treatmentsSupported);
+  const procedureLabels = location.procedures.map((p) => PROCEDURE_LABELS[p] ?? p);
 
   const fullAddress = `${location.address}, ${location.city}, ${location.state} ${location.zip}`;
   const mapsQuery = encodeURIComponent(fullAddress);
@@ -64,7 +78,7 @@ export default async function LocationPage({ params }: LocationPageProps) {
       <section className="bg-[#0d0d0d] px-6 pb-14 pt-16 md:px-10">
         <div className="mx-auto w-full max-w-3xl">
           <Link
-            href="/locations"
+            href={backHref}
             className="inline-flex items-center gap-1.5 text-[13px] text-white/40 transition-colors hover:text-white/70"
           >
             <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -90,6 +104,16 @@ export default async function LocationPage({ params }: LocationPageProps) {
                 ARC Verified
               </span>
             )}
+          </div>
+
+          {/* Treatment areas + procedures */}
+          <div className="mt-6 space-y-1">
+            <p className="text-[11px] text-white/50">
+              Treats: {treatmentLabels.join(", ")}
+            </p>
+            <p className="text-[11px] text-white/50">
+              Treatments offered: {procedureLabels.join(", ")}
+            </p>
           </div>
 
           {/* Description */}

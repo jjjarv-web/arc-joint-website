@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import type { SearchResult } from "@/lib/types";
+import { getTreatmentAreaLabels } from "@/lib/locationFilters";
 
 const PROCEDURE_LABELS: Record<string, string> = {
   PNS: "Peripheral Nerve Stimulation",
@@ -14,6 +15,8 @@ interface LocationCardProps {
   variant: "dark" | "light";
   onSelect: (id: string) => void;
   onProfileClick?: () => void;
+  zip?: string;
+  area?: string | null;
 }
 
 const tokens = {
@@ -49,13 +52,18 @@ const tokens = {
   },
 } as const;
 
-export function LocationCard({ location, isActive, isClosest, variant, onSelect, onProfileClick }: LocationCardProps) {
+export function LocationCard({ location, isActive, isClosest, variant, onSelect, onProfileClick, zip, area }: LocationCardProps) {
   const router = useRouter();
   const t = tokens[variant];
+  const treatmentLabels = getTreatmentAreaLabels(location.treatmentsSupported);
 
   const handleProfileClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    router.push(`/locations/${location.slug}`);
+    const params = new URLSearchParams();
+    if (zip) params.set("zip", zip);
+    if (area) params.set("area", area);
+    const query = params.toString();
+    router.push(`/locations/${location.slug}${query ? `?${query}` : ""}`);
     onProfileClick?.();
   };
 
@@ -94,6 +102,9 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect,
       {/* Resting state details */}
       <div className="mt-2.5 space-y-0.5">
         <p className={`text-[13px] font-light ${t.specialty}`}>{location.specialty}</p>
+        <p className={`text-[11px] ${t.insurance}`}>
+          Treats: {treatmentLabels.join(", ")}
+        </p>
         <p className={`text-[12px] ${t.insurance}`}>Medicare and most private insurance accepted</p>
       </div>
 
