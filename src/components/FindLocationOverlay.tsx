@@ -2,19 +2,19 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { SearchResult } from "@/lib/types";
-import { ProviderCard } from "@/components/experience/ProviderCard";
+import { LocationCard } from "@/components/experience/LocationCard";
 
-interface FindProviderOverlayProps {
+interface FindLocationOverlayProps {
   open: boolean;
   onClose: () => void;
 }
 
-export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps) {
+export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps) {
   const [zip, setZip] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [activeProviderId, setActiveProviderId] = useState("");
+  const [activeLocationId, setActiveLocationId] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Lock body scroll while open
@@ -41,15 +41,15 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
     setLoading(true);
     setError("");
     setResults([]);
-    setActiveProviderId("");
+    setActiveLocationId("");
 
     try {
-      const response = await fetch(`/api/providers/search?zip=${encodeURIComponent(zip)}`);
+      const response = await fetch(`/api/locations/search?zip=${encodeURIComponent(zip)}`);
       const data = (await response.json()) as { error?: string; results?: SearchResult[] };
-      if (!response.ok) throw new Error(data.error || "Unable to search providers right now.");
+      if (!response.ok) throw new Error(data.error || "Unable to search locations right now.");
       const incoming = data.results || [];
       setResults(incoming);
-      if (incoming.length > 0) setActiveProviderId(incoming[0].id);
+      if (incoming.length > 0) setActiveLocationId(incoming[0].id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unexpected error while searching.");
     } finally {
@@ -61,7 +61,7 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
     setZip("");
     setError("");
     setResults([]);
-    setActiveProviderId("");
+    setActiveLocationId("");
   };
 
   if (!open) return null;
@@ -72,7 +72,7 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
       <button
         type="button"
         onClick={onClose}
-        aria-label="Close Find a Provider"
+        aria-label="Close Find a Location"
         className="absolute right-6 top-6 flex h-8 w-8 items-center justify-center rounded-full text-white/40 transition-colors hover:text-white/80 md:right-10 md:top-8"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -83,9 +83,9 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
 
       <div className="mx-auto mt-10 w-full max-w-lg">
         {/* Header */}
-        <p className="mb-1 text-[11px] uppercase tracking-[0.26em] text-white/35">ARC Provider Network</p>
+        <p className="mb-1 text-[11px] uppercase tracking-[0.26em] text-white/35">ARC Location Network</p>
         <p className="mb-8 text-[28px] font-light leading-tight tracking-tight text-white md:text-[34px]">
-          Find a provider near you.
+          Find a location near you.
         </p>
 
         {/* ZIP form */}
@@ -161,7 +161,7 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
             <div className="mb-3 flex items-center justify-between">
               <p className="text-[10px] uppercase tracking-[0.22em] text-white/45">Near {zip}</p>
               <div className="flex items-center gap-3">
-                <p className="text-[10px] text-white/30">{results.length} provider{results.length !== 1 ? "s" : ""}</p>
+                <p className="text-[10px] text-white/30">{results.length} location{results.length !== 1 ? "s" : ""}</p>
                 <button
                   type="button"
                   onClick={reset}
@@ -173,14 +173,14 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
             </div>
 
             <ul className="space-y-2">
-              {results.map((provider, index) => (
-                <li key={provider.id}>
-                  <ProviderCard
-                    provider={provider}
-                    isActive={provider.id === activeProviderId}
+              {results.map((location, index) => (
+                <li key={location.id}>
+                  <LocationCard
+                    location={location}
+                    isActive={location.id === activeLocationId}
                     isClosest={index === 0}
                     variant="dark"
-                    onSelect={setActiveProviderId}
+                    onSelect={setActiveLocationId}
                   />
                 </li>
               ))}
@@ -190,7 +190,7 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
 
         {results.length === 0 && !loading && !error && (
           <p className="mt-5 text-center text-[12px] font-light text-white/35">
-            Used by patients across the country to find ARC-trained providers.
+            Used by patients across the country to find ARC-trained locations.
           </p>
         )}
       </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getNearestProviders } from "@/lib/providers";
+import type { JointRegion } from "@/lib/types";
+import { getNearestLocations } from "@/lib/locations";
 
 interface ZippopotamResponse {
   places?: Array<{
@@ -9,6 +10,19 @@ interface ZippopotamResponse {
 }
 
 const ZIP_REGEX = /^\d{5}$/;
+
+const VALID_JOINTS = new Set<string>([
+  "cervical",
+  "left-shoulder",
+  "right-shoulder",
+  "lumbar",
+  "left-hip",
+  "right-hip",
+  "left-knee",
+  "right-knee",
+  "left-ankle",
+  "right-ankle",
+]);
 
 async function fetchZipCentroid(zip: string): Promise<{ lat: number; lon: number } | null> {
   const controller = new AbortController();
@@ -47,6 +61,10 @@ async function fetchZipCentroid(zip: string): Promise<{ lat: number; lon: number
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const zip = (searchParams.get("zip") || "").trim();
+  const rawJoint = (searchParams.get("joint") || "").trim();
+  const joint: JointRegion | undefined = VALID_JOINTS.has(rawJoint)
+    ? (rawJoint as JointRegion)
+    : undefined;
 
   if (!ZIP_REGEX.test(zip)) {
     return NextResponse.json(
@@ -64,14 +82,15 @@ export async function GET(request: Request) {
     );
   }
 
-  const results = getNearestProviders(origin.lat, origin.lon, 10).map((provider) => ({
-    ...provider,
-    distanceMiles: Number(provider.distanceMiles.toFixed(1)),
+  const results = getNearestLocations(origin.lat, origin.lon, joint, 10).map((location) => ({
+    ...location,
+    distanceMiles: Number(location.distanceMiles.toFixed(1)),
   }));
 
   return NextResponse.json({
     zip,
     origin,
+    joint: joint ?? null,
     count: results.length,
     results,
   });

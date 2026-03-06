@@ -12,12 +12,13 @@ export type JointRegion =
   | "left-ankle"
   | "right-ankle";
 
-export interface Provider {
+export interface ClinicLocation {
   id: string;
   slug: string;
   name: string;
   description: string;
   specialty: string;
+  address: string;
   city: string;
   state: string;
   zip: string;
@@ -26,8 +27,9 @@ export interface Provider {
   bookingUrl: string;
   verified: boolean;
   procedures: Procedure[];
+  treatmentsSupported: JointRegion[];
 }
 
-export interface SearchResult extends Provider {
+export interface SearchResult extends ClinicLocation {
   distanceMiles: number;
 }

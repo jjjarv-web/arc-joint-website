@@ -9,8 +9,8 @@ import type { SearchResult } from "@/lib/types";
 import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
 import { BodySelector } from "@/components/experience/BodySelector";
 import type { JointRegion } from "@/lib/types";
-import { ProviderCard } from "@/components/experience/ProviderCard";
-import { FindProviderOverlay } from "@/components/FindProviderOverlay";
+import { LocationCard } from "@/components/experience/LocationCard";
+import { FindLocationOverlay } from "@/components/FindLocationOverlay";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -90,7 +90,7 @@ function getPersonalizedReview(
 }
 
 export function HomeExperience() {
-  const [heroCTAOpen, setHeroCTAOpen] = useState(false);
+  const [findLocationOpen, setFindLocationOpen] = useState(false);
   const [step, setStep] = useState<AssessmentStep>("knee");
   const [painRegion, setPainRegion] = useState<PainRegion>("");
   const [duration, setDuration] = useState("");
@@ -101,12 +101,12 @@ export function HomeExperience() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [analyzing, setAnalyzing] = useState(false);
   const [reviewVisible, setReviewVisible] = useState(false);
-  const [providerZip, setProviderZip] = useState("");
-  const [providerLoading, setProviderLoading] = useState(false);
-  const [providerError, setProviderError] = useState("");
-  const [providerResults, setProviderResults] = useState<SearchResult[]>([]);
-  const [activeProviderId, setActiveProviderId] = useState("");
-  const [activeBottomProviderId, setActiveBottomProviderId] = useState("");
+  const [locationZip, setLocationZip] = useState("");
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [locationError, setLocationError] = useState("");
+  const [locationResults, setLocationResults] = useState<SearchResult[]>([]);
+  const [activeLocationId, setActiveLocationId] = useState("");
+  const [activeBottomLocationId, setActiveBottomLocationId] = useState("");
   const [zipExpanded, setZipExpanded] = useState(false);
 
   const isCollapsed = results.length > 0 && !zipExpanded;
@@ -368,10 +368,10 @@ export function HomeExperience() {
     { scope: container }
   );
 
-  const nearestLabel = useMemo(() => (results.length > 0 ? `${results.length} providers` : ""), [results]);
-  const providerNearestLabel = useMemo(
-    () => (providerResults.length > 0 ? `${providerResults.length} providers` : ""),
-    [providerResults]
+  const nearestLabel = useMemo(() => (results.length > 0 ? `${results.length} locations` : ""), [results]);
+  const locationNearestLabel = useMemo(
+    () => (locationResults.length > 0 ? `${locationResults.length} locations` : ""),
+    [locationResults]
   );
 
   const resetAssessment = () => {
@@ -384,7 +384,7 @@ export function HomeExperience() {
     setZipExpanded(false);
     setError("");
     setResults([]);
-    setActiveProviderId("");
+    setActiveLocationId("");
     setLoading(false);
   };
 
@@ -395,52 +395,53 @@ export function HomeExperience() {
     setResults([]);
 
     try {
-      const response = await fetch(`/api/providers/search?zip=${encodeURIComponent(zip)}`);
+      const jointParam = painRegion ? `&joint=${encodeURIComponent(painRegion)}` : "";
+      const response = await fetch(`/api/locations/search?zip=${encodeURIComponent(zip)}${jointParam}`);
       const data = (await response.json()) as { error?: string; results?: SearchResult[] };
 
       if (!response.ok) {
-        throw new Error(data.error || "Unable to search providers right now.");
+        throw new Error(data.error || "Unable to search locations right now.");
       }
 
       const incoming = data.results || [];
       setResults(incoming);
       if (incoming.length > 0) {
-        setActiveProviderId(incoming[0].id);
+        setActiveLocationId(incoming[0].id);
         setZipExpanded(false);
       }
     } catch (requestError) {
       const message =
         requestError instanceof Error
           ? requestError.message
-          : "Unexpected issue while searching providers.";
+          : "Unexpected issue while searching locations.";
       setError(message);
     } finally {
       setLoading(false);
     }
   };
 
-  const runProviderSearch = async (event: React.FormEvent<HTMLFormElement>) => {
+  const runLocationSearch = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setProviderLoading(true);
-    setProviderError("");
-    setProviderResults([]);
+    setLocationLoading(true);
+    setLocationError("");
+    setLocationResults([]);
     try {
-      const response = await fetch(`/api/providers/search?zip=${encodeURIComponent(providerZip)}`);
+      const response = await fetch(`/api/locations/search?zip=${encodeURIComponent(locationZip)}`);
       const data = (await response.json()) as { error?: string; results?: SearchResult[] };
       if (!response.ok) {
-        throw new Error(data.error || "Unable to search providers right now.");
+        throw new Error(data.error || "Unable to search locations right now.");
       }
       const incoming = data.results || [];
-      setProviderResults(incoming);
-      if (incoming.length > 0) setActiveBottomProviderId(incoming[0].id);
+      setLocationResults(incoming);
+      if (incoming.length > 0) setActiveBottomLocationId(incoming[0].id);
     } catch (requestError) {
       const message =
         requestError instanceof Error
           ? requestError.message
-          : "Unexpected issue while searching providers.";
-      setProviderError(message);
+          : "Unexpected issue while searching locations.";
+      setLocationError(message);
     } finally {
-      setProviderLoading(false);
+      setLocationLoading(false);
     }
   };
 
@@ -494,7 +495,7 @@ export function HomeExperience() {
         </p>
         <button
           type="button"
-          onClick={() => setHeroCTAOpen(true)}
+          onClick={() => setFindLocationOpen(true)}
           className="hero-cta mt-10 group inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/90 px-5 py-2.5 text-[14px] font-medium tracking-tight text-black shadow-[0_4px_14px_rgba(0,0,0,0.07),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.95)_inset]"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -507,7 +508,7 @@ export function HomeExperience() {
           Scroll to explore
         </p>
       </section>
-      <FindProviderOverlay open={heroCTAOpen} onClose={() => setHeroCTAOpen(false)} />
+      <FindLocationOverlay open={findLocationOpen} onClose={() => setFindLocationOpen(false)} />
 
       <section className="disruption-section relative z-20 flex min-h-screen items-center justify-center bg-white px-6 py-20">
         <div className="disruption-inner mx-auto w-full max-w-4xl text-center [perspective:1200px]">
@@ -777,7 +778,7 @@ export function HomeExperience() {
 
                       <div style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 3.2s forwards" }}>
                         <p className="mb-2 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
-                          Enter your ZIP to find a provider near you.
+                          Enter your ZIP to find a location near you.
                         </p>
                         <form onSubmit={runSearch}>
                           <div className="relative overflow-hidden rounded-2xl p-px">
@@ -841,7 +842,7 @@ export function HomeExperience() {
                         </form>
                         {results.length === 0 && !loading && (
                           <p className="mt-4 text-center text-[12px] font-light text-white/45">
-                            Used by patients across the country to find ARC-trained providers.
+                            Used by patients across the country to find ARC-trained locations.
                           </p>
                         )}
                         {error && <p className="mt-4 text-center text-sm text-red-400/70">{error}</p>}
@@ -858,7 +859,7 @@ export function HomeExperience() {
                         <div>
                           <p className="text-[11px] uppercase tracking-[0.16em] text-white/35">Near {zip}</p>
                           <p className="mt-0.5 text-[14px] font-light text-white/70">
-                            {results.length} provider{results.length !== 1 ? "s" : ""} found
+                            {results.length} location{results.length !== 1 ? "s" : ""} found
                           </p>
                         </div>
                         <button
@@ -871,7 +872,7 @@ export function HomeExperience() {
                         </button>
                       </div>
 
-                      {/* Provider results */}
+                      {/* Location results */}
                       {results.length > 0 && (
                       <div className="mt-6">
                         <div className="mb-3 flex items-center justify-between">
@@ -880,24 +881,24 @@ export function HomeExperience() {
                         </div>
 
                         <ul className="space-y-2">
-                          {results.map((provider, index) => (
-                            <li key={provider.id}>
-                              <ProviderCard
-                                provider={provider}
-                                isActive={provider.id === activeProviderId}
+                          {results.map((location, index) => (
+                            <li key={location.id}>
+                              <LocationCard
+                                location={location}
+                                isActive={location.id === activeLocationId}
                                 isClosest={index === 0}
                                 variant="dark"
-                                onSelect={setActiveProviderId}
+                                onSelect={setActiveLocationId}
                               />
                             </li>
                           ))}
                         </ul>
 
                         <Link
-                          href="/providers"
+                          href="/locations"
                           className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/80"
                         >
-                          See all providers →
+                          See all locations →
                         </Link>
                       </div>
                       )}
@@ -945,63 +946,63 @@ export function HomeExperience() {
       <section className="relative z-20 flex flex-col items-center justify-center bg-white px-6 py-20">
         <div className="mx-auto w-full max-w-2xl text-center">
           <h3 className="text-xs font-normal tracking-[0.18em] text-black/35">
-            Find a provider near you
+            Find a location near you
           </h3>
-          <form onSubmit={runProviderSearch} className="mt-5">
+          <form onSubmit={runLocationSearch} className="mt-5">
             <div className="group inline-flex items-center gap-3 rounded-full border border-black/5 bg-white/95 px-5 py-3 shadow-[0_6px_18px_rgba(0,0,0,0.08),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(0,0,0,0.14),0_1px_0_rgba(255,255,255,0.95)_inset]">
-              <label htmlFor="provider-zip" className="sr-only">
+              <label htmlFor="location-zip" className="sr-only">
                 Enter ZIP code
               </label>
               <input
-                id="provider-zip"
+                id="location-zip"
                 type="text"
                 inputMode="numeric"
                 pattern="\d{5}"
                 maxLength={5}
-                value={providerZip}
-                onChange={(e) => setProviderZip(e.target.value.replace(/\D/g, ""))}
+                value={locationZip}
+                onChange={(e) => setLocationZip(e.target.value.replace(/\D/g, ""))}
                 placeholder="ZIP code"
                 className="w-24 bg-transparent text-[15px] font-medium tracking-tight text-black outline-none placeholder:text-black/40"
               />
               <button
                 type="submit"
-                disabled={providerZip.length !== 5 || providerLoading}
+                disabled={locationZip.length !== 5 || locationLoading}
                 className="flex items-center gap-1.5 text-[15px] font-medium tracking-tight text-black transition-opacity hover:opacity-70 disabled:opacity-40"
               >
-                {providerLoading ? "Searching…" : "Find"}
+                {locationLoading ? "Searching…" : "Find"}
                 <span aria-hidden="true">&gt;</span>
               </button>
             </div>
           </form>
-          {providerError && (
-            <p className="mt-4 text-sm text-red-500">{providerError}</p>
+          {locationError && (
+            <p className="mt-4 text-sm text-red-500">{locationError}</p>
           )}
-          {providerResults.length > 0 && (
+          {locationResults.length > 0 && (
             <div className="mt-6 w-full text-left animate-[fadeIn_0.5s_ease-out_forwards]">
               <div className="mb-3 flex items-center justify-between">
-                <p className="text-[10px] uppercase tracking-[0.22em] text-black/45">Near {providerZip}</p>
-                <p className="text-[10px] text-black/35">{providerNearestLabel}</p>
+                <p className="text-[10px] uppercase tracking-[0.22em] text-black/45">Near {locationZip}</p>
+                <p className="text-[10px] text-black/35">{locationNearestLabel}</p>
               </div>
 
               <ul className="space-y-2">
-                {providerResults.map((provider, index) => (
-                  <li key={provider.id}>
-                    <ProviderCard
-                      provider={provider}
-                      isActive={provider.id === activeBottomProviderId}
+                {locationResults.map((location, index) => (
+                  <li key={location.id}>
+                    <LocationCard
+                      location={location}
+                      isActive={location.id === activeBottomLocationId}
                       isClosest={index === 0}
                       variant="light"
-                      onSelect={setActiveBottomProviderId}
+                      onSelect={setActiveBottomLocationId}
                     />
                   </li>
                 ))}
               </ul>
 
               <Link
-                href="/providers"
+                href="/locations"
                 className="mt-4 inline-block text-[11px] uppercase tracking-[0.15em] text-black/40 transition-colors hover:text-black/70"
               >
-                See all providers →
+                See all locations →
               </Link>
             </div>
           )}

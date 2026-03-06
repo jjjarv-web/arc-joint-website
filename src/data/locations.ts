@@ -1,6 +1,19 @@
-import type { Provider } from "@/lib/types";
+import type { ClinicLocation, JointRegion } from "@/lib/types";
 
-export const providers: Provider[] = [
+const ALL_JOINTS: JointRegion[] = [
+  "cervical",
+  "left-shoulder",
+  "right-shoulder",
+  "lumbar",
+  "left-hip",
+  "right-hip",
+  "left-knee",
+  "right-knee",
+  "left-ankle",
+  "right-ankle",
+];
+
+export const locations: ClinicLocation[] = [
   {
     id: "arc-scottsdale",
     slug: "arc-center-scottsdale",
@@ -8,6 +21,7 @@ export const providers: Provider[] = [
     description:
       "Precision peripheral nerve stimulation with a preserve-first decision model.",
     specialty: "Orthopedic Surgeon",
+    address: "3210 N Scottsdale Rd",
     city: "Scottsdale",
     state: "AZ",
     zip: "85251",
@@ -16,6 +30,7 @@ export const providers: Provider[] = [
     bookingUrl: "https://example.com/scottsdale",
     verified: true,
     procedures: ["PNS"],
+    treatmentsSupported: ALL_JOINTS,
   },
   {
     id: "phoenix-ortho",
@@ -24,6 +39,7 @@ export const providers: Provider[] = [
     description:
       "Integrated pain and orthopedic care focused on minimally invasive options first.",
     specialty: "Orthopedic Surgeon",
+    address: "1245 E Thomas Rd",
     city: "Phoenix",
     state: "AZ",
     zip: "85004",
@@ -32,14 +48,16 @@ export const providers: Provider[] = [
     bookingUrl: "https://example.com/phoenix",
     verified: false,
     procedures: ["PNS"],
+    treatmentsSupported: ALL_JOINTS,
   },
   {
     id: "austin-preserve",
     slug: "austin-preserve-clinic",
     name: "Austin Preserve Clinic",
     description:
-      "Neuromodulation-forward treatment planning for chronic knee pain patients.",
+      "Neuromodulation-forward treatment planning for chronic joint pain patients.",
     specialty: "Neurosurgeon",
+    address: "701 W 38th St",
     city: "Austin",
     state: "TX",
     zip: "78701",
@@ -48,6 +66,7 @@ export const providers: Provider[] = [
     bookingUrl: "https://example.com/austin",
     verified: true,
     procedures: ["PNS"],
+    treatmentsSupported: ALL_JOINTS,
   },
   {
     id: "san-diego-nerve",
@@ -56,6 +75,7 @@ export const providers: Provider[] = [
     description:
       "Conservative interventions and precision stimulation pathways before replacement.",
     specialty: "Neurosurgeon",
+    address: "4060 4th Ave",
     city: "San Diego",
     state: "CA",
     zip: "92101",
@@ -64,6 +84,7 @@ export const providers: Provider[] = [
     bookingUrl: "https://example.com/sandiego",
     verified: true,
     procedures: ["PNS"],
+    treatmentsSupported: ALL_JOINTS,
   },
   {
     id: "orange-county-arc",
@@ -72,6 +93,7 @@ export const providers: Provider[] = [
     description:
       "Candidate evaluation and treatment sequencing for preserve and modulate pathways.",
     specialty: "Orthopedic Surgeon",
+    address: "18800 MacArthur Blvd",
     city: "Irvine",
     state: "CA",
     zip: "92618",
@@ -80,5 +102,6 @@ export const providers: Provider[] = [
     bookingUrl: "https://example.com/orangecounty",
     verified: false,
     procedures: ["PNS"],
+    treatmentsSupported: ALL_JOINTS,
   },
 ];

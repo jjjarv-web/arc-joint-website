@@ -11,7 +11,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "ARC | Alternative Replacement Care",
   description:
-    "Alternative Replacement Care. Preserve before replace with precision neuromodulation and provider discovery.",
+    "Alternative Replacement Care. Preserve before replace with precision neuromodulation and location-based care discovery.",
 };
 
 export default function RootLayout({

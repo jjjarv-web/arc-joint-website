@@ -7,8 +7,8 @@ const PROCEDURE_LABELS: Record<string, string> = {
   PNS: "Peripheral Nerve Stimulation",
 };
 
-interface ProviderCardProps {
-  provider: SearchResult;
+interface LocationCardProps {
+  location: SearchResult;
   isActive: boolean;
   isClosest: boolean;
   variant: "dark" | "light";
@@ -48,13 +48,13 @@ const tokens = {
   },
 } as const;
 
-export function ProviderCard({ provider, isActive, isClosest, variant, onSelect }: ProviderCardProps) {
+export function LocationCard({ location, isActive, isClosest, variant, onSelect }: LocationCardProps) {
   const t = tokens[variant];
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(provider.id)}
+      onClick={() => onSelect(location.id)}
       className={`w-full rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
         isActive ? t.cardActive : t.cardResting
       }`}
@@ -63,10 +63,10 @@ export function ProviderCard({ provider, isActive, isClosest, variant, onSelect 
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className={`text-[16px] font-light leading-snug ${t.name}`}>
-            {provider.name}
+            {location.name}
           </p>
           <p className={`mt-0.5 text-[12px] ${t.location}`}>
-            {provider.city}, {provider.state} · {provider.distanceMiles.toFixed(1)} mi
+            {location.city}, {location.state} · {location.distanceMiles.toFixed(1)} mi
           </p>
         </div>
         {isClosest && (
@@ -78,7 +78,7 @@ export function ProviderCard({ provider, isActive, isClosest, variant, onSelect 
 
       {/* Resting state details */}
       <div className="mt-2.5 space-y-0.5">
-        <p className={`text-[13px] font-light ${t.specialty}`}>{provider.specialty}</p>
+        <p className={`text-[13px] font-light ${t.specialty}`}>{location.specialty}</p>
         <p className={`text-[12px] ${t.insurance}`}>Medicare and most private insurance accepted</p>
       </div>
 
@@ -91,7 +91,7 @@ export function ProviderCard({ provider, isActive, isClosest, variant, onSelect 
           <div className="pt-4">
             {/* Procedures */}
             <div className="mb-4 space-y-0.5">
-              {provider.procedures.map((proc) => (
+              {location.procedures.map((proc) => (
                 <p key={proc} className={`text-[13px] font-light ${t.procedure}`}>
                   {PROCEDURE_LABELS[proc] ?? proc}
                 </p>
@@ -101,9 +101,9 @@ export function ProviderCard({ provider, isActive, isClosest, variant, onSelect 
             {/* Divider */}
             <div className={`mb-4 h-px w-full ${t.divider}`} />
 
-            {/* CTAs */}
+            {/* CTA */}
             <a
-              href={provider.bookingUrl}
+              href={location.bookingUrl}
               target="_blank"
               rel="noopener noreferrer"
               className={`block w-full rounded-full py-3 text-center text-[13px] font-medium transition-opacity ${t.ctaPrimary}`}
@@ -120,7 +120,7 @@ export function ProviderCard({ provider, isActive, isClosest, variant, onSelect 
             {/* Profile link */}
             <div className="mt-4 text-center">
               <Link
-                href={`/providers/${provider.slug}`}
+                href={`/locations/${location.slug}`}
                 onClick={(e) => e.stopPropagation()}
                 className={`text-[11px] uppercase tracking-[0.14em] transition-colors ${t.profileLink}`}
               >

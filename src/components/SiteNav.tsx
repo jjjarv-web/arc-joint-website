@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { ExploreOverlay } from "@/components/experience/ExploreOverlay";
-import { FindProviderOverlay } from "@/components/FindProviderOverlay";
+import { FindLocationOverlay } from "@/components/FindLocationOverlay";
 
 export function SiteNav() {
   const [exploreOpen, setExploreOpen] = useState(false);
-  const [findProviderOpen, setFindProviderOpen] = useState(false);
+  const [findLocationOpen, setFindLocationOpen] = useState(false);
 
   const pillPrimary =
     "inline-flex items-center gap-2 rounded-full border border-black/5 bg-white/95 px-5 py-2.5 text-[15px] font-medium tracking-tight text-black shadow-[0_6px_18px_rgba(0,0,0,0.08),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_26px_rgba(0,0,0,0.14),0_1px_0_rgba(255,255,255,0.95)_inset]";
@@ -43,7 +43,7 @@ export function SiteNav() {
         {/* Find Location — primary */}
         <button
           type="button"
-          onClick={() => setFindProviderOpen(true)}
+          onClick={() => setFindLocationOpen(true)}
           className={pillPrimary}
         >
           <svg
@@ -66,7 +66,7 @@ export function SiteNav() {
 
       {/* Overlays */}
       <ExploreOverlay open={exploreOpen} onClose={() => setExploreOpen(false)} />
-      <FindProviderOverlay open={findProviderOpen} onClose={() => setFindProviderOpen(false)} />
+      <FindLocationOverlay open={findLocationOpen} onClose={() => setFindLocationOpen(false)} />
     </>
   );
 }
