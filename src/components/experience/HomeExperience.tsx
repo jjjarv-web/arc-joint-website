@@ -121,6 +121,7 @@ export function HomeExperience() {
   // Refs for GSAP-driven zip transition
   const reviewFormRef = useRef<HTMLDivElement>(null);
   const zipResultsAreaRef = useRef<HTMLDivElement>(null);
+  const zipInputRef = useRef<HTMLInputElement>(null);
   const zipTlRef = useRef<gsap.core.Timeline | null>(null);
   const prevIsCollapsedRef = useRef(false);
 
@@ -503,6 +504,13 @@ export function HomeExperience() {
     return () => window.clearTimeout(t);
   }, [step]);
 
+  // Auto-focus ZIP input when it appears — ready to type, encourages entry
+  useEffect(() => {
+    if (!reviewVisible || step !== "zip" || results.length > 0) return;
+    const t = window.setTimeout(() => zipInputRef.current?.focus(), 3400);
+    return () => window.clearTimeout(t);
+  }, [reviewVisible, step, results.length]);
+
   return (
     <main ref={container} className="relative bg-white text-[#111111]">
 
@@ -797,75 +805,51 @@ export function HomeExperience() {
                       />
 
                       <div style={{ opacity: 0, animation: "fadeIn 0.7s ease-out 3.2s forwards" }}>
-                        <p className="mb-6 text-[22px] font-medium leading-tight tracking-tight text-white md:text-[24px]">
-                          Find an ARC location near you
+                        <p className="mb-4 text-[11px] uppercase tracking-[0.2em] text-white/45">
+                          Next
+                        </p>
+                        <p
+                          className="mb-5 text-[22px] font-medium leading-[1.35] tracking-tight text-white md:text-[24px]"
+                          style={{ animation: "zipHeadlineCta 1.1s ease-out 3.2s forwards" }}
+                        >
+                          Enter your ZIP to see if there&apos;s a location nearby?
                         </p>
                         <form onSubmit={runSearch}>
-                          <div className="relative overflow-hidden rounded-2xl p-px">
-                            {/* Breathing glow — Apple-style, stops once search has run */}
-                            <div
-                              className="pointer-events-none absolute inset-0 rounded-2xl"
-                              style={{
-                                boxShadow: "0 0 24px rgba(138,210,255,0.5)",
-                                animation: results.length > 0 || loading ? "none" : "breathingGlow 5s ease-in-out infinite",
-                                opacity: results.length > 0 ? 0 : 1,
-                                transition: "opacity 0.4s ease-out",
-                              }}
+                          <div className="flex w-full max-w-md items-stretch overflow-hidden rounded-2xl border border-black/10 bg-white/95 shadow-[0_4px_20px_rgba(0,0,0,0.2)] transition-all duration-200 focus-within:border-black/20 focus-within:shadow-[0_6px_28px_rgba(0,0,0,0.25)]">
+                            <label htmlFor="zip-input" className="sr-only">
+                              ZIP code
+                            </label>
+                            <input
+                              ref={zipInputRef}
+                              id="zip-input"
+                              type="text"
+                              inputMode="numeric"
+                              pattern="\d{5}"
+                              maxLength={5}
+                              value={zip}
+                              onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
+                              placeholder="12345"
+                              className="min-w-0 flex-1 bg-transparent px-6 py-4 text-[18px] font-medium tracking-tight text-black outline-none placeholder:text-black/40 md:text-[20px]"
                             />
-                            <div className="relative rounded-[15px] border border-white/[0.08] bg-white/[0.04] px-5 py-5 transition-colors duration-200 focus-within:border-white/[0.12] focus-within:bg-white/[0.06]">
-                              <label htmlFor="zip-input" className="mb-2 block text-[13px] font-light text-white/60">
-                                ZIP Code
-                              </label>
-                              <div className="flex items-center gap-3">
-                                <input
-                                  id="zip-input"
-                                  type="text"
-                                  inputMode="numeric"
-                                  pattern="\d{5}"
-                                  maxLength={5}
-                                  value={zip}
-                                  onChange={(event) => setZip(event.target.value.replace(/\D/g, ""))}
-                                  placeholder="e.g. 90210"
-                                  className="min-w-0 flex-1 bg-transparent text-[22px] font-light tracking-wide text-white outline-none placeholder:text-white/45 md:text-[24px]"
-                                />
-                                <span className="shrink-0 text-[12px] tabular-nums text-white/40">{zip.length}/5</span>
-                              </div>
-                              <div className="mt-3 h-px w-full rounded-full bg-white/10">
-                                <div
-                                  className="h-full rounded-full transition-all duration-200"
-                                  style={{
-                                    width: `${(zip.length / 5) * 100}%`,
-                                    backgroundColor: zip.length === 5 ? "rgba(138,210,255,0.8)" : "rgba(138,210,255,0.4)",
-                                    boxShadow: zip.length > 0 ? "0 0 6px rgba(138,210,255,0.5)" : "none",
-                                  }}
-                                />
-                              </div>
-                            </div>
+                            <button
+                              type="submit"
+                              disabled={zip.length !== 5 || loading}
+                              className="flex shrink-0 items-center justify-center gap-1.5 border-l border-black/10 bg-black/5 px-6 text-[15px] font-medium tracking-tight text-black transition-colors hover:bg-black/10 disabled:opacity-40 disabled:hover:bg-black/5"
+                            >
+                              {loading ? (
+                                <span className="inline-flex items-center gap-2">
+                                  <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
+                                  Searching…
+                                </span>
+                              ) : (
+                                <>
+                                  Find
+                                  <span aria-hidden="true">&gt;</span>
+                                </>
+                              )}
+                            </button>
                           </div>
-                          <button
-                            type="submit"
-                            disabled={zip.length !== 5 || loading}
-                            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98] disabled:scale-[0.98] disabled:opacity-70"
-                            style={{
-                              backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
-                              color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
-                              boxShadow: zip.length === 5 ? "0 0 50px rgba(138,210,255,0.18), 0 0 20px rgba(255,255,255,0.1)" : "none",
-                              animation: zip.length === 5 ? "subtlePulse 0.4s ease-out" : "none",
-                            }}
-                          >
-                            {loading ? (
-                              <span className="inline-flex items-center justify-center gap-2">
-                                <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
-                                Searching…
-                              </span>
-                            ) : "Find Locations"}
-                          </button>
                         </form>
-                        {results.length === 0 && !loading && (
-                          <p className="mt-4 text-center text-[12px] font-light text-white/45">
-                            Used nationwide to find ARC-trained care locations.
-                          </p>
-                        )}
                         {error && <p className="mt-4 text-center text-sm text-red-400/70">{error}</p>}
                       </div>
                     </div>
