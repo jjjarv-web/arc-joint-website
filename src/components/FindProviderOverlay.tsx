@@ -136,11 +136,12 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
           <button
             type="submit"
             disabled={zip.length !== 5 || loading}
-            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-300 enabled:active:scale-[0.98]"
+            className="mt-4 w-full rounded-full py-4 text-[15px] font-medium tracking-tight transition-all duration-500 enabled:active:scale-[0.98]"
             style={{
               backgroundColor: zip.length === 5 ? "rgb(255,255,255)" : "rgba(255,255,255,0.08)",
               color: zip.length === 5 ? "rgb(0,0,0)" : "rgba(255,255,255,0.3)",
-              boxShadow: zip.length === 5 ? "0 0 50px rgba(138,210,255,0.18), 0 0 20px rgba(255,255,255,0.1)" : "none",
+              boxShadow: zip.length === 5 && results.length === 0 ? "0 0 50px rgba(138,210,255,0.18), 0 0 20px rgba(255,255,255,0.1)" : "none",
+              opacity: results.length > 0 ? 0.28 : 1,
             }}
           >
             {loading ? (
@@ -148,7 +149,7 @@ export function FindProviderOverlay({ open, onClose }: FindProviderOverlayProps)
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
                 Searching…
               </span>
-            ) : "Show Providers Near Me"}
+            ) : "Show Locations Near Me"}
           </button>
         </form>
 

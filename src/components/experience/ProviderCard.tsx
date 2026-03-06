@@ -102,30 +102,19 @@ export function ProviderCard({ provider, isActive, isClosest, variant, onSelect 
             <div className={`mb-4 h-px w-full ${t.divider}`} />
 
             {/* CTAs */}
-            <div className="flex gap-2.5">
-              <a
-                href={provider.bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex-1 rounded-full py-3 text-center text-[13px] font-medium transition-opacity ${t.ctaPrimary}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                Request Appointment
-              </a>
-              <a
-                href={provider.bookingUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`flex-1 rounded-full border py-3 text-center text-[13px] font-light transition-all ${t.ctaSecondary}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                Message Clinic
-              </a>
-            </div>
+            <a
+              href={provider.bookingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`block w-full rounded-full py-3 text-center text-[13px] font-medium transition-opacity ${t.ctaPrimary}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              Request Appointment
+            </a>
 
-            {/* Disclaimer */}
-            <p className={`mt-3 text-center text-[11px] ${t.disclaimer}`}>
-              Coverage verified after scheduling
+            {/* Nudge copy */}
+            <p className={`mt-2.5 text-center text-[11px] leading-snug ${t.disclaimer}`}>
+              Requesting an appointment is the fastest way to connect — no commitment required.
             </p>
 
             {/* Profile link */}

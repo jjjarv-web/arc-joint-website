@@ -1,0 +1,3 @@
+{"sessionId":"39abce","location":"HomeExperience.tsx:panel-effect","message":"Assessment panel useEffect ran","data":{"step":"duration","willAnimate":true},"timestamp":1772576589173}
+{"sessionId":"39abce","location":"HomeExperience.tsx:panel-effect","message":"Assessment panel useEffect ran","data":{"step":"status","willAnimate":false},"timestamp":1772576590227}
+{"sessionId":"39abce","location":"HomeExperience.tsx:panel-effect","message":"Assessment panel useEffect ran","data":{"step":"zip","willAnimate":false},"timestamp":1772576591027}

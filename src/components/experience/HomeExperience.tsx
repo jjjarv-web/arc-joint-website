@@ -836,7 +836,7 @@ export function HomeExperience() {
                                 <span className="h-3.5 w-3.5 animate-spin rounded-full border border-black/30 border-t-black" />
                                 Searching…
                               </span>
-                            ) : "Show Providers Near Me"}
+                            ) : "Show Locations Near Me"}
                           </button>
                         </form>
                         {results.length === 0 && !loading && (
