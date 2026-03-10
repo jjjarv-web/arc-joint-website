@@ -173,6 +173,12 @@ export function HomeExperience() {
           "-=0.35"
         )
         .fromTo(
+          ".hero-message",
+          { autoAlpha: 0, y: 12, scale: 0.97 },
+          { autoAlpha: 1, y: 0, scale: 1.02, duration: 1.0 },
+          "+=0.1"
+        )
+        .fromTo(
           ".hero-cta",
           { autoAlpha: 0, y: 10 },
           { autoAlpha: 1, y: 0, duration: 0.9 },
@@ -532,17 +538,23 @@ export function HomeExperience() {
   return (
     <main ref={container} className="relative bg-white text-[#111111]">
 
-      <section className="sticky top-0 z-0 flex h-screen flex-col items-center justify-center px-6 text-center">
+      <section
+        className="sticky top-0 z-0 flex h-screen flex-col items-center justify-center px-6 text-center"
+        style={{ background: "radial-gradient(ellipse at 50% 40%, rgba(220,225,235,0.35) 0%, rgba(255,255,255,0) 70%)" }}
+      >
         <p className="hero-arc text-[clamp(56px,12vw,150px)] font-light tracking-tight">
           ARC
         </p>
         <p className="hero-subtitle mt-3 text-[13px] uppercase tracking-[0.32em] text-black/55 md:text-[14px]">
           Alternative Replacement Care
         </p>
+        <p className="hero-message mt-6 origin-center text-[18px] font-medium leading-snug tracking-tight text-black md:text-[22px]">
+          Joint replacement isn&apos;t the only option.
+        </p>
         <button
           type="button"
           onClick={() => setFindLocationOpen(true)}
-          className="hero-cta mt-10 group inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/90 px-5 py-2.5 text-[14px] font-medium tracking-tight text-black shadow-[0_4px_14px_rgba(0,0,0,0.07),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.95)_inset]"
+          className="hero-cta mt-8 group inline-flex items-center gap-2 rounded-full border border-black/8 bg-white/90 px-5 py-2.5 text-[14px] font-medium tracking-tight text-black shadow-[0_4px_14px_rgba(0,0,0,0.07),0_1px_0_rgba(255,255,255,0.8)_inset] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_20px_rgba(0,0,0,0.12),0_1px_0_rgba(255,255,255,0.95)_inset]"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="h-[14px] w-[14px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
@@ -550,9 +562,16 @@ export function HomeExperience() {
           </svg>
           Find a location near you
         </button>
-        <p className="hero-scroll-hint absolute bottom-14 left-1/2 -translate-x-1/2 text-[11px] uppercase tracking-[0.18em] text-black/25">
-          Scroll to explore
-        </p>
+        <button
+          type="button"
+          onClick={() => {
+            const target = document.querySelector(".disruption-section");
+            if (target) target.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="hero-scroll-hint absolute bottom-14 left-1/2 -translate-x-1/2 cursor-pointer border-0 bg-transparent p-0 text-[11px] uppercase tracking-[0.18em] text-black/25 transition-colors hover:text-black/50"
+        >
+          See how ARC works ↓
+        </button>
       </section>
       <FindLocationOverlay open={findLocationOpen} onClose={() => setFindLocationOpen(false)} />
 
