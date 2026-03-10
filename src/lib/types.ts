@@ -13,7 +13,7 @@ export interface ClinicLocation {
   slug: string;
   name: string;
   description: string;
-  specialty: string;
+  specialties: string[];
   address: string;
   city: string;
   state: string;

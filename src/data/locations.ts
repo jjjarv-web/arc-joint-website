@@ -8,7 +8,7 @@ export const locations: ClinicLocation[] = [
     name: "Arizona Neuro Spine Center",
     description:
       "Precision neuromodulation for cervical and lumbar pain. Preserve-first pathways before surgical options.",
-    specialty: "Neurosurgeon",
+    specialties: ["Neurosurgeon"],
     address: "3104 E Camelback Rd",
     city: "Phoenix",
     state: "AZ",
@@ -26,7 +26,7 @@ export const locations: ClinicLocation[] = [
     name: "Desert Neurological Institute",
     description:
       "Comprehensive spine and shoulder neuromodulation. Conservative interventions first.",
-    specialty: "Neurosurgeon",
+    specialties: ["Neurosurgeon"],
     address: "10250 N 92nd St",
     city: "Scottsdale",
     state: "AZ",
@@ -45,7 +45,7 @@ export const locations: ClinicLocation[] = [
     name: "Valley Orthopedic Specialists",
     description:
       "Knee-focused care with minimally invasive PNS. Preserve before replace.",
-    specialty: "Orthopedic Surgeon",
+    specialties: ["Orthopedic Surgeon"],
     address: "5620 E Broadway Blvd",
     city: "Tucson",
     state: "AZ",
@@ -63,7 +63,7 @@ export const locations: ClinicLocation[] = [
     name: "Sunrise Orthopedics Phoenix",
     description:
       "Knee and hip preservation. Integrated pain and orthopedic pathways.",
-    specialty: "Orthopedic Surgeon",
+    specialties: ["Orthopedic Surgeon"],
     address: "4530 E Ray Rd",
     city: "Phoenix",
     state: "AZ",
@@ -81,7 +81,7 @@ export const locations: ClinicLocation[] = [
     name: "Cactus Orthopedic Group",
     description:
       "Shoulder and ankle specialists. Minimally invasive options before replacement.",
-    specialty: "Orthopedic Surgeon",
+    specialties: ["Orthopedic Surgeon"],
     address: "3210 N Scottsdale Rd",
     city: "Scottsdale",
     state: "AZ",
@@ -99,7 +99,7 @@ export const locations: ClinicLocation[] = [
     name: "Mesa Orthopedic Partners",
     description:
       "Broad joint care: knee, shoulder, and hip. Preserve-first decision model.",
-    specialty: "Orthopedic Surgeon",
+    specialties: ["Orthopedic Surgeon"],
     address: "1234 S Dobson Rd",
     city: "Mesa",
     state: "AZ",
@@ -118,7 +118,7 @@ export const locations: ClinicLocation[] = [
     name: "Arizona Foot & Ankle Vascular",
     description:
       "Vascular clinic offering PNS for chronic ankle pain. Preserve-first pathways.",
-    specialty: "Interventional Radiologist",
+    specialties: ["Interventional Radiologist"],
     address: "1400 S Dobson Rd",
     city: "Mesa",
     state: "AZ",
@@ -136,7 +136,7 @@ export const locations: ClinicLocation[] = [
     name: "Phoenix Hip Vascular Clinic",
     description:
       "Vascular clinic focused on hip preservation. Minimally invasive PNS.",
-    specialty: "Interventional Radiologist",
+    specialties: ["Interventional Radiologist"],
     address: "1245 E Thomas Rd",
     city: "Phoenix",
     state: "AZ",
@@ -154,7 +154,7 @@ export const locations: ClinicLocation[] = [
     name: "Scottsdale Shoulder Vascular",
     description:
       "Vascular clinic for shoulder and neck pain. Precision nerve stimulation.",
-    specialty: "Interventional Radiologist",
+    specialties: ["Interventional Radiologist"],
     address: "8994 E Desert Cove Ave",
     city: "Scottsdale",
     state: "AZ",
@@ -172,7 +172,7 @@ export const locations: ClinicLocation[] = [
     name: "Arizona Comprehensive Vascular",
     description:
       "Full-spectrum vascular clinic. All joint treatment areas supported.",
-    specialty: "Interventional Radiologist",
+    specialties: ["Interventional Radiologist"],
     address: "4980 S Alma School Rd",
     city: "Chandler",
     state: "AZ",

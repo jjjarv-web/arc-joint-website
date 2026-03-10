@@ -97,9 +97,11 @@ export default async function LocationPage({ params, searchParams }: LocationPag
 
           {/* Badges */}
           <div className="mt-5 flex flex-wrap items-center gap-2">
-            <span className="rounded-full border border-white/[0.12] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/55">
-              {location.specialty}
-            </span>
+            {location.specialties.map((s) => (
+              <span key={s} className="rounded-full border border-white/[0.12] px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-white/55">
+                {s}
+              </span>
+            ))}
             {location.verified && (
               <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] uppercase tracking-[0.14em] text-emerald-400/80">
                 ARC Verified

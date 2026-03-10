@@ -113,7 +113,7 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect,
 
       {/* Resting state details */}
       <div className="mt-2.5 space-y-0.5">
-        <p className={`text-[13px] font-light ${t.specialty}`}>{location.specialty}</p>
+        <p className={`text-[13px] font-light ${t.specialty}`}>{location.specialties.join(" · ")}</p>
         <p className={`text-[11px] ${t.insurance}`}>
           Treats: {treatmentLabels.join(", ")}
         </p>

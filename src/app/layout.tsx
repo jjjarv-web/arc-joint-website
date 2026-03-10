@@ -12,6 +12,9 @@ export const metadata: Metadata = {
   title: "ARC | Alternative Replacement Care",
   description:
     "Alternative Replacement Care. Preserve before replace with precision neuromodulation and location-based care discovery.",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

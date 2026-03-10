@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { ArcLogo } from "@/components/ArcLogo";
 import { ExploreOverlay } from "@/components/experience/ExploreOverlay";
 import { FindLocationOverlay } from "@/components/FindLocationOverlay";
 
@@ -16,7 +18,16 @@ export function SiteNav() {
 
   return (
     <>
-      {/* Floating pill pair — fixed top-right on every page */}
+      {/* Logo — fixed top-left */}
+      <Link
+        href="/"
+        className="fixed left-5 top-5 z-40 flex items-center gap-2 transition-opacity duration-300 hover:opacity-70 md:left-8 md:top-6"
+        aria-label="ARC Home"
+      >
+        <ArcLogo className="h-7 w-auto" color="#000" />
+      </Link>
+
+      {/* Floating pill pair — fixed top-right */}
       <div className="fixed right-5 top-5 z-40 flex items-center gap-2 md:right-8 md:top-6">
         {/* Explore — secondary/subtle */}
         <button

@@ -30,7 +30,6 @@ const REQUIRED_STRING_FIELDS = [
   "slug",
   "name",
   "description",
-  "specialty",
   "address",
   "city",
   "state",
@@ -90,6 +89,17 @@ locations.forEach((loc, idx) => {
   }
   if (!Number.isFinite(loc.lon)) {
     err(label, `lon is not a finite number: ${loc.lon}`);
+  }
+
+  // specialties
+  if (!Array.isArray(loc.specialties) || loc.specialties.length === 0) {
+    err(label, "specialties must be a non-empty array");
+  } else {
+    for (const s of loc.specialties) {
+      if (typeof s !== "string" || s.trim() === "") {
+        err(label, `Invalid specialties value: "${s}"`);
+      }
+    }
   }
 
   // treatmentsSupported

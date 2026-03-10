@@ -150,9 +150,11 @@ export function LocationsBrowseList({ locations, zip, initialArea }: LocationsBr
                       </div>
 
                       <div className="flex shrink-0 items-center gap-3">
-                        <span className="rounded-full border border-black/[0.12] px-3 py-1 text-[11px] uppercase tracking-[0.1em] text-black/50">
-                          {location.specialty}
-                        </span>
+                        {location.specialties.map((s) => (
+                          <span key={s} className="rounded-full border border-black/[0.12] px-3 py-1 text-[11px] uppercase tracking-[0.1em] text-black/50">
+                            {s}
+                          </span>
+                        ))}
                         {!isActive && (
                           <span className="inline-flex items-center gap-1.5 rounded-full bg-black py-2.5 px-4 text-[13px] font-medium text-white transition-colors group-hover:bg-black/85">
                             View Location
