@@ -668,9 +668,16 @@ export function HomeExperience() {
         <div className="product-dim-overlay pointer-events-none absolute inset-0 bg-black opacity-0" />
         <div className="mx-auto grid w-full max-w-6xl items-center gap-8 md:gap-14 md:grid-cols-2">
           <div
-            className="product-visual order-2 flex aspect-[4/3] items-center justify-center rounded-3xl bg-[#f4f4f4] text-xs uppercase tracking-[0.28em] text-black/20 md:order-1 md:aspect-square"
+            className="product-visual order-2 aspect-[4/3] overflow-hidden rounded-3xl bg-[#f4f4f4] md:order-1"
           >
-            Rotating knee placeholder
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              className="h-full w-full object-cover"
+              src="/videos/pns-demo.mp4"
+            />
           </div>
           <div className="product-copy order-1 md:order-2">
             <h3 className="product-headline text-[clamp(40px,6vw,76px)] font-semibold leading-none">
