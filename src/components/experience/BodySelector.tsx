@@ -20,7 +20,7 @@ interface BodySelectorProps {
   visible?: boolean;
 }
 
-const TRUST_HEADLINE = "Performed by Orthopedic and Neurosurgeons in select medical centers";
+const TRUST_HEADLINE = "Performed by Orthopedic Surgeons and Neurosurgeons";
 
 // Labels shown on hover tooltip
 const REGION_LABEL: Record<JointRegion, string> = {
@@ -52,22 +52,22 @@ interface Hotspot {
 }
 
 const HOTSPOTS: Hotspot[] = [
-  // Cervical — small tight vertical oval on the neck
-  { id: "cervical",       x: 0.511, y: 0.150, w: "5%",   h: "5.5%"  },
-  // Shoulders — wide flat oval centered on the actual glenohumeral joint
-  { id: "left-shoulder",  x: 0.368, y: 0.195, w: "10%",  h: "4%"    },
-  { id: "right-shoulder", x: 0.653, y: 0.195, w: "10%",  h: "4%"    },
+  // Cervical — vertical oval on the neck
+  { id: "cervical",       x: 0.511, y: 0.150, w: "5%",   h: "7.5%"  },
+  // Shoulders — on glenohumeral joint, taller oval
+  { id: "left-shoulder",  x: 0.407, y: 0.195, w: "10%",  h: "6%"    },
+  { id: "right-shoulder", x: 0.613, y: 0.195, w: "10%",  h: "6%"    },
   // Lumbar — narrow elongated vertical glow on the lower spine
   { id: "lumbar",         x: 0.513, y: 0.378, w: "4.5%", h: "9%"    },
-  // Hips
-  { id: "left-hip",       x: 0.425, y: 0.477, w: "10%",  h: "7%"    },
-  { id: "right-hip",      x: 0.597, y: 0.477, w: "10%",  h: "7%"    },
+  // Hips — moved medial toward acetabulum
+  { id: "left-hip",       x: 0.440, y: 0.477, w: "10%",  h: "7%"    },
+  { id: "right-hip",      x: 0.582, y: 0.477, w: "10%",  h: "7%"    },
   // Knees
-  { id: "left-knee",      x: 0.447, y: 0.686, w: "6.5%", h: "11%"   },
-  { id: "right-knee",     x: 0.572, y: 0.686, w: "6.5%", h: "11%"   },
-  // Ankles
-  { id: "left-ankle",     x: 0.460, y: 0.922, w: "5%",   h: "6.5%"  },
-  { id: "right-ankle",    x: 0.565, y: 0.922, w: "5%",   h: "6.5%"  },
+  { id: "left-knee",      x: 0.462, y: 0.686, w: "6.5%", h: "11%"   },
+  { id: "right-knee",     x: 0.557, y: 0.686, w: "6.5%", h: "11%"   },
+  // Ankles — adjusted to ankle joint center
+  { id: "left-ankle",     x: 0.470, y: 0.912, w: "5%",   h: "6.5%"  },
+  { id: "right-ankle",    x: 0.552, y: 0.912, w: "5%",   h: "6.5%"  },
 ];
 
 // Knees get a slightly brighter resting glow than other joints
@@ -89,6 +89,7 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
   const [interactive, setInteractive] = useState(false);
   const [softGateActive, setSoftGateActive] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [debugHotspots] = useState(() =>
     typeof window !== "undefined"
       ? new URLSearchParams(window.location.search).get("debugHotspots") === "1"
@@ -104,6 +105,14 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
     syncPreference();
     query.addEventListener("change", syncPreference);
     return () => query.removeEventListener("change", syncPreference);
+  }, []);
+
+  useEffect(() => {
+    const mobileQuery = window.matchMedia("(max-width: 767px)");
+    const sync = () => setIsMobile(mobileQuery.matches);
+    sync();
+    mobileQuery.addEventListener("change", sync);
+    return () => mobileQuery.removeEventListener("change", sync);
   }, []);
 
   useEffect(() => {
@@ -420,10 +429,11 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
   // Gentle idle pulse on all hotspots after becoming interactive
   useEffect(() => {
     if (!interactive || reducedMotion) return;
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
     const tweens = HOTSPOTS.map((h, i) =>
       gsap.to(`.joint-hint-core--${h.id}`, {
-        scale: 1.07,
-        duration: 0.9,
+        scale: mobile ? 1.12 : 1.07,
+        duration: mobile ? 1.0 : 0.9,
         ease: "sine.inOut",
         repeat: -1,
         yoyo: true,
@@ -559,8 +569,9 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
       }
     }
 
-    // Only register if within a reasonable hit radius
-    if (!best || bestDist > 0.12) return null;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
+    const hitRadius = isMobile ? 0.16 : 0.12;
+    if (!best || bestDist > hitRadius) return null;
 
     return {
       hotspot: best,
@@ -594,10 +605,9 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
           <div className="body-trust-copy pointer-events-none absolute left-1/2 top-[26%] w-full max-w-5xl -translate-x-1/2 px-4 text-center">
             <p className="body-trust-headline relative text-balance text-[clamp(34px,5.2vw,72px)] font-semibold leading-[1.05] tracking-[-0.02em] text-white/94 [text-shadow:0_0_34px_rgba(145,180,220,0.1)]">
               Performed by{" "}
-              <span className="body-trust-emphasis font-bold text-white [text-shadow:0_0_20px_rgba(255,255,255,0.1)]">Orthopedic</span>
+              <span className="body-trust-emphasis font-bold text-white [text-shadow:0_0_20px_rgba(255,255,255,0.1)]">Orthopedic Surgeons</span>
               {" "}and{" "}
               <span className="body-trust-emphasis font-bold text-white [text-shadow:0_0_20px_rgba(255,255,255,0.1)]">Neurosurgeons</span>
-              {" "}in select medical centers
             </p>
             <p className="sr-only">{TRUST_HEADLINE}</p>
           </div>
@@ -630,21 +640,21 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
                     style={{
                       background: [
                         // Knees
-                        `radial-gradient(ellipse 7% 13% at 44.7% 68.6%, rgba(106,192,255,0.10) 0%, transparent 100%)`,
-                        `radial-gradient(ellipse 7% 13% at 57.2% 68.6%, rgba(106,192,255,0.10) 0%, transparent 100%)`,
+                        `radial-gradient(ellipse 7% 13% at 46.2% 68.6%, rgba(106,192,255,0.10) 0%, transparent 100%)`,
+                        `radial-gradient(ellipse 7% 13% at 55.7% 68.6%, rgba(106,192,255,0.10) 0%, transparent 100%)`,
                         // Hips
-                        `radial-gradient(ellipse 11% 8% at 42.5% 47.7%, rgba(106,192,255,0.07) 0%, transparent 70%)`,
-                        `radial-gradient(ellipse 11% 8% at 59.7% 47.7%, rgba(106,192,255,0.07) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 11% 8% at 44% 47.7%, rgba(106,192,255,0.07) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 11% 8% at 58.2% 47.7%, rgba(106,192,255,0.07) 0%, transparent 70%)`,
                         // Lumbar
                         `radial-gradient(ellipse 5% 11% at 51.3% 37.8%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
                         // Shoulders
-                        `radial-gradient(ellipse 12% 5% at 36.8% 19.5%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
-                        `radial-gradient(ellipse 12% 5% at 65.3% 19.5%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 12% 7% at 40.7% 19.5%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 12% 7% at 61.3% 19.5%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
                         // Cervical
-                        `radial-gradient(ellipse 5% 6% at 51.1% 15%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 5% 8% at 51.1% 15%, rgba(106,192,255,0.06) 0%, transparent 70%)`,
                         // Ankles
-                        `radial-gradient(ellipse 5% 7% at 46% 92.2%, rgba(106,192,255,0.05) 0%, transparent 70%)`,
-                        `radial-gradient(ellipse 5% 7% at 56.5% 92.2%, rgba(106,192,255,0.05) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 5% 7% at 47% 91.2%, rgba(106,192,255,0.05) 0%, transparent 70%)`,
+                        `radial-gradient(ellipse 5% 7% at 55.2% 91.2%, rgba(106,192,255,0.05) 0%, transparent 70%)`,
                       ].join(", "),
                     }}
                   />
@@ -702,6 +712,9 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
                 {HOTSPOTS.map((h) => {
                   const isBrighter = BRIGHTER_JOINT_IDS.has(h.id);
                   const isHovered = hoverRegion === h.id;
+                  const mobileScale = 1.6;
+                  const w = isMobile ? `${parseFloat(h.w) * mobileScale}%` : h.w;
+                  const hh = isMobile ? `${parseFloat(h.h) * mobileScale}%` : h.h;
                   return (
                     <div
                       key={h.id}
@@ -711,8 +724,8 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
                       style={{
                         left: `${h.x * 100}%`,
                         top: `${h.y * 100}%`,
-                        width: h.w,
-                        height: h.h,
+                        width: w,
+                        height: hh,
                       }}
                     >
                       {/* Inner glow — light emanating from within the joint */}

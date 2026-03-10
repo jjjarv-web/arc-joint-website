@@ -285,22 +285,6 @@ export function HomeExperience() {
       );
 
       gsap.fromTo(
-        ".philosophy-ghost",
-        { autoAlpha: 0, y: -36 },
-        {
-          autoAlpha: 1,
-          y: 0,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: ".philosophy-section",
-            start: "top 96%",
-            end: "top 54%",
-            scrub: 1.45,
-          },
-        }
-      );
-
-      gsap.fromTo(
         ".philosophy-step",
         { autoAlpha: 0, y: 26 },
         {
@@ -637,9 +621,6 @@ export function HomeExperience() {
       </section>
 
       <section className="philosophy-section relative z-20 flex min-h-screen items-center bg-black px-6 py-20 text-white">
-        <p className="philosophy-ghost pointer-events-none absolute left-1/2 top-[15vh] -translate-x-1/2 text-[clamp(72px,9.5vw,138px)] font-light tracking-tight text-white/[0.08]">
-          ARC
-        </p>
         <div className="mx-auto w-full max-w-5xl">
           <div className="text-center">
             <p className="philosophy-label text-xs uppercase tracking-[0.26em] text-white/52">
@@ -655,7 +636,7 @@ export function HomeExperience() {
                 Preserve
               </p>
               <p className="mt-3 text-xs leading-relaxed text-white/50 md:text-sm">
-                Maintain your natural biology.
+                Preserve your natural joint.
               </p>
             </div>
             <div className="philosophy-step">
@@ -680,12 +661,12 @@ export function HomeExperience() {
 
       <section
         ref={productSectionRef}
-        className="product-section sticky top-0 z-20 flex h-screen items-center overflow-hidden bg-white px-6 py-20"
+        className="product-section sticky top-0 z-20 flex min-h-screen items-center overflow-hidden bg-white px-6 py-20 md:h-screen md:min-h-0"
       >
         <div className="product-dim-overlay pointer-events-none absolute inset-0 bg-black opacity-0" />
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-14 md:grid-cols-2">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-8 md:gap-14 md:grid-cols-2">
           <div
-            className="product-visual order-2 flex aspect-square items-center justify-center rounded-3xl bg-[#f4f4f4] text-xs uppercase tracking-[0.28em] text-black/20 md:order-1"
+            className="product-visual order-2 flex aspect-[4/3] items-center justify-center rounded-3xl bg-[#f4f4f4] text-xs uppercase tracking-[0.28em] text-black/20 md:order-1 md:aspect-square"
           >
             Rotating knee placeholder
           </div>
