@@ -11,6 +11,7 @@ import { AssessmentErrorBoundary } from "@/components/experience/AssessmentError
 import { BodySelector } from "@/components/experience/BodySelector";
 import type { JointRegion } from "@/lib/types";
 import { LocationCard } from "@/components/experience/LocationCard";
+import { BookingModal } from "@/components/BookingModal";
 import { FindLocationOverlay } from "@/components/FindLocationOverlay";
 import {
   TREATMENT_AREA_FILTERS,
@@ -113,6 +114,7 @@ export function HomeExperience() {
   const [locationResults, setLocationResults] = useState<SearchResult[]>([]);
   const [activeLocationId, setActiveLocationId] = useState("");
   const [activeBottomLocationId, setActiveBottomLocationId] = useState("");
+  const [bookingModal, setBookingModal] = useState<{ url: string; name: string } | null>(null);
   const [bottomTreatmentAreaFilter, setBottomTreatmentAreaFilter] = useState<string | null>(null);
   const [assessmentTreatmentAreaFilter, setAssessmentTreatmentAreaFilter] = useState<string | null>(null);
   const [zipExpanded, setZipExpanded] = useState(false);
@@ -984,6 +986,7 @@ export function HomeExperience() {
                                     isClosest
                                     variant="dark"
                                     onSelect={setActiveLocationId}
+                                    onBookingClick={(url, name) => setBookingModal({ url, name })}
                                     zip={zip}
                                     area={assessmentTreatmentAreaFilter}
                                   />
@@ -1004,6 +1007,7 @@ export function HomeExperience() {
                                         isClosest={false}
                                         variant="dark"
                                         onSelect={setActiveLocationId}
+                                        onBookingClick={(url, name) => setBookingModal({ url, name })}
                                         zip={zip}
                                         area={assessmentTreatmentAreaFilter}
                                       />
@@ -1143,6 +1147,7 @@ export function HomeExperience() {
                           isClosest
                           variant="light"
                           onSelect={setActiveBottomLocationId}
+                          onBookingClick={(url, name) => setBookingModal({ url, name })}
                           zip={locationZip}
                           area={bottomTreatmentAreaFilter}
                         />
@@ -1163,6 +1168,7 @@ export function HomeExperience() {
                               isClosest={false}
                               variant="light"
                               onSelect={setActiveBottomLocationId}
+                              onBookingClick={(url, name) => setBookingModal({ url, name })}
                               zip={locationZip}
                               area={bottomTreatmentAreaFilter}
                             />
@@ -1188,6 +1194,13 @@ export function HomeExperience() {
           )}
         </div>
       </section>
+
+      <BookingModal
+        isOpen={bookingModal !== null}
+        onClose={() => setBookingModal(null)}
+        bookingUrl={bookingModal?.url ?? ""}
+        locationName={bookingModal?.name ?? ""}
+      />
     </main>
   );
 }

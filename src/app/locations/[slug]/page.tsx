@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllLocations, getLocationBySlug } from "@/lib/locations";
 import { getTreatmentAreaLabels } from "@/lib/locationFilters";
+import { BookingCTA } from "@/components/locations/BookingCTA";
 
 interface LocationPageProps {
   params: Promise<{ slug: string }>;
@@ -122,14 +123,11 @@ export default async function LocationPage({ params, searchParams }: LocationPag
           </p>
 
           {/* Primary CTA */}
-          <a
-            href={location.bookingUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-8 block w-full rounded-full bg-white py-4 text-center text-[15px] font-medium tracking-tight text-black transition-opacity hover:opacity-90 active:opacity-75 md:w-auto md:inline-block md:px-10"
-          >
-            Request Appointment
-          </a>
+          <BookingCTA
+            bookingUrl={location.bookingUrl}
+            locationName={location.name}
+            className="mt-8 block w-full cursor-pointer rounded-full bg-white py-4 text-center text-[15px] font-medium tracking-tight text-black transition-opacity hover:opacity-90 active:opacity-75 md:w-auto md:inline-block md:px-10"
+          />
           <p className="mt-3 text-[12px] text-white/30">
             Requesting an appointment is the fastest way to connect — no commitment required.
           </p>

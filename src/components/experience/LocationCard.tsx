@@ -17,6 +17,7 @@ interface LocationCardProps {
   variant: "dark" | "light";
   onSelect: (id: string) => void;
   onProfileClick?: () => void;
+  onBookingClick?: (bookingUrl: string, locationName: string) => void;
   zip?: string;
   area?: string | null;
 }
@@ -54,7 +55,7 @@ const tokens = {
   },
 } as const;
 
-export function LocationCard({ location, isActive, isClosest, variant, onSelect, onProfileClick, zip, area }: LocationCardProps) {
+export function LocationCard({ location, isActive, isClosest, variant, onSelect, onProfileClick, onBookingClick, zip, area }: LocationCardProps) {
   const router = useRouter();
   const t = tokens[variant];
   const treatmentLabels = getTreatmentAreaLabels(location.treatmentsSupported);
@@ -131,15 +132,20 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect,
             <div className={`mb-4 h-px w-full ${t.divider}`} />
 
             {/* CTA */}
-            <a
-              href={location.bookingUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
               className={`block w-full rounded-full py-3 text-center text-[13px] font-medium transition-opacity ${t.ctaPrimary}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onBookingClick) {
+                  onBookingClick(location.bookingUrl, location.name);
+                } else {
+                  window.open(location.bookingUrl, "_blank", "noopener,noreferrer");
+                }
+              }}
             >
               Request Appointment
-            </a>
+            </button>
 
             {/* Nudge copy */}
             <p className={`mt-2.5 text-center text-[11px] leading-snug ${t.disclaimer}`}>

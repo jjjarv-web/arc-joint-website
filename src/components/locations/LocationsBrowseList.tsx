@@ -8,6 +8,7 @@ import {
   filterByTreatmentArea,
   getTreatmentAreaLabels,
 } from "@/lib/locationFilters";
+import { BookingModal } from "@/components/BookingModal";
 
 const PROCEDURE_LABELS: Record<string, string> = {
   PNS: "Peripheral Nerve Stimulation",
@@ -36,9 +37,18 @@ export function LocationsBrowseList({ locations, zip, initialArea }: LocationsBr
     setActiveLocationId(filtered[0]?.id ?? "");
   }, [filtered]);
 
+  const [bookingModal, setBookingModal] = useState<{ url: string; name: string } | null>(null);
+
   const isSearchMode = !!zip;
 
   return (
+    <>
+    <BookingModal
+      isOpen={bookingModal !== null}
+      onClose={() => setBookingModal(null)}
+      bookingUrl={bookingModal?.url ?? ""}
+      locationName={bookingModal?.name ?? ""}
+    />
     <section className="bg-[#f5f5f5] px-6 py-14 md:px-10">
       <div className="mx-auto w-full max-w-4xl">
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -182,15 +192,16 @@ export function LocationsBrowseList({ locations, zip, initialArea }: LocationsBr
 
                             {/* Right column — CTA */}
                             <div className="flex flex-col items-start justify-between gap-4 md:items-end">
-                              <a
-                                href={location.bookingUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
+                              <button
+                                type="button"
                                 className="block w-full rounded-full bg-[#2563EB] py-3 text-center text-[13px] font-medium text-white transition-colors hover:bg-[#1D4ED8] active:bg-[#1E40AF] md:w-auto md:px-8"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setBookingModal({ url: location.bookingUrl, name: location.name });
+                                }}
                               >
                                 Request Appointment
-                              </a>
+                              </button>
                               <div className="w-full text-left md:text-right">
                                 <p className="text-[11px] leading-snug text-black/30">
                                   No commitment required
@@ -227,5 +238,6 @@ export function LocationsBrowseList({ locations, zip, initialArea }: LocationsBr
         )}
       </div>
     </section>
+    </>
   );
 }

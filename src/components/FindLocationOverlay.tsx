@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import type { SearchResult } from "@/lib/types";
 import { LocationCard } from "@/components/experience/LocationCard";
+import { BookingModal } from "@/components/BookingModal";
 import { TREATMENT_AREA_FILTERS, filterByTreatmentArea } from "@/lib/locationFilters";
 
 interface FindLocationOverlayProps {
@@ -18,6 +19,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
   const [results, setResults] = useState<SearchResult[]>([]);
   const [activeLocationId, setActiveLocationId] = useState("");
   const [treatmentAreaFilter, setTreatmentAreaFilter] = useState<string | null>(null);
+  const [bookingModal, setBookingModal] = useState<{ url: string; name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsListRef = useRef<HTMLUListElement>(null);
 
@@ -240,6 +242,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
                         variant="dark"
                         onSelect={setActiveLocationId}
                         onProfileClick={onClose}
+                        onBookingClick={(url, name) => setBookingModal({ url, name })}
                         zip={zip}
                         area={treatmentAreaFilter}
                       />
@@ -261,6 +264,7 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
                             variant="dark"
                             onSelect={setActiveLocationId}
                             onProfileClick={onClose}
+                            onBookingClick={(url, name) => setBookingModal({ url, name })}
                             zip={zip}
                             area={treatmentAreaFilter}
                           />
@@ -290,6 +294,13 @@ export function FindLocationOverlay({ open, onClose }: FindLocationOverlayProps)
           </p>
         )}
       </div>
+
+      <BookingModal
+        isOpen={bookingModal !== null}
+        onClose={() => setBookingModal(null)}
+        bookingUrl={bookingModal?.url ?? ""}
+        locationName={bookingModal?.name ?? ""}
+      />
     </div>
   );
 }
