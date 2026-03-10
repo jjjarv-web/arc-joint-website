@@ -81,26 +81,34 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect,
           onSelect(location.id);
         }
       }}
-      className={`w-full cursor-pointer rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
+      className={`relative w-full cursor-pointer rounded-2xl border px-5 py-4 text-left transition-all duration-300 ease-out ${
         isActive ? t.cardActive : t.cardResting
       }`}
     >
+      {isClosest && (
+        <span className={`absolute right-0 top-0 rounded-bl-lg px-3 py-1.5 text-[9px] uppercase tracking-[0.16em] ${
+          variant === "dark" ? "bg-white/[0.06] text-white/40" : "bg-black/[0.04] text-black/35"
+        }`}>
+          Closest
+        </span>
+      )}
+
       {/* Always-visible header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-1.5">
           <p className={`text-[16px] font-light leading-snug ${t.name}`}>
             {location.name}
           </p>
-          <p className={`mt-0.5 text-[12px] ${t.location}`}>
-            {location.city}, {location.state}
-            {location.distanceMiles != null && ` · ${location.distanceMiles.toFixed(1)} mi`}
-          </p>
+          {location.verified && (
+            <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[9px] uppercase tracking-[0.1em] text-emerald-400/80">
+              Verified
+            </span>
+          )}
         </div>
-        {isClosest && (
-          <span className={`mt-0.5 shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] uppercase tracking-[0.12em] ${t.badge}`}>
-            Closest
-          </span>
-        )}
+        <p className={`mt-0.5 text-[12px] ${t.location}`}>
+          {location.city}, {location.state}
+          {location.distanceMiles != null && ` · ${location.distanceMiles.toFixed(1)} mi`}
+        </p>
       </div>
 
       {/* Resting state details */}

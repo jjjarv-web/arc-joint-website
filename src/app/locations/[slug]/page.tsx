@@ -126,7 +126,7 @@ export default async function LocationPage({ params, searchParams }: LocationPag
           <BookingCTA
             bookingUrl={location.bookingUrl}
             locationName={location.name}
-            className="mt-8 block w-full cursor-pointer rounded-full bg-white py-4 text-center text-[15px] font-medium tracking-tight text-black transition-opacity hover:opacity-90 active:opacity-75 md:w-auto md:inline-block md:px-10"
+            className="mt-8 block w-full cursor-pointer rounded-full bg-[#2563EB] py-4 text-center text-[15px] font-medium tracking-tight text-white transition-colors hover:bg-[#1D4ED8] active:bg-[#1E40AF] md:w-auto md:inline-block md:px-10"
           />
           <p className="mt-3 text-[12px] text-white/30">
             Requesting an appointment is the fastest way to connect — no commitment required.
