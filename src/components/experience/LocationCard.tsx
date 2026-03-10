@@ -1,15 +1,17 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import type { SearchResult } from "@/lib/types";
+import type { ClinicLocation, SearchResult } from "@/lib/types";
 import { getTreatmentAreaLabels } from "@/lib/locationFilters";
 
 const PROCEDURE_LABELS: Record<string, string> = {
   PNS: "Peripheral Nerve Stimulation",
 };
 
+type LocationData = ClinicLocation & { distanceMiles?: number };
+
 interface LocationCardProps {
-  location: SearchResult;
+  location: LocationData | SearchResult;
   isActive: boolean;
   isClosest: boolean;
   variant: "dark" | "light";
@@ -89,7 +91,8 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect,
             {location.name}
           </p>
           <p className={`mt-0.5 text-[12px] ${t.location}`}>
-            {location.city}, {location.state} · {location.distanceMiles.toFixed(1)} mi
+            {location.city}, {location.state}
+            {location.distanceMiles != null && ` · ${location.distanceMiles.toFixed(1)} mi`}
           </p>
         </div>
         {isClosest && (

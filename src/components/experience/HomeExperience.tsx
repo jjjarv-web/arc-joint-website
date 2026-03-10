@@ -258,7 +258,7 @@ export function HomeExperience() {
         )
         .to(
           ".disruption-xray",
-          { filter: "drop-shadow(0 0 50px rgba(100,200,255,0.35)) drop-shadow(0 0 100px rgba(138,210,255,0.18))", duration: 1.8 },
+          { filter: "drop-shadow(0 0 45px rgba(100,200,255,0.35)) drop-shadow(0 0 70px rgba(138,210,255,0.14))", duration: 1.8 },
           "<"
         )
         // Headline settles with subtle scale
@@ -599,13 +599,13 @@ export function HomeExperience() {
                 fill
                 sizes="(max-width: 768px) 280px, 340px"
                 className="disruption-xray object-contain object-center"
-                style={{ filter: "drop-shadow(0 0 50px rgba(255,60,30,0.4)) drop-shadow(0 0 100px rgba(255,80,50,0.2))" }}
+                style={{ filter: "drop-shadow(0 0 45px rgba(255,60,30,0.4)) drop-shadow(0 0 70px rgba(255,80,50,0.15))" }}
               />
               {/* Hot glow — red pain, visible at start */}
               <div className="disruption-glow-hot pointer-events-none absolute inset-0" style={{
                 background: [
-                  "radial-gradient(ellipse 60% 40% at 50% 42%, rgba(255,50,20,0.38) 0%, rgba(255,80,40,0.18) 40%, transparent 72%)",
-                  "radial-gradient(ellipse 80% 55% at 50% 42%, rgba(255,100,60,0.12) 0%, transparent 80%)",
+                  "radial-gradient(ellipse 45% 32% at 50% 42%, rgba(255,50,20,0.42) 0%, rgba(255,80,40,0.18) 40%, transparent 68%)",
+                  "radial-gradient(ellipse 58% 42% at 50% 42%, rgba(255,100,60,0.10) 0%, transparent 72%)",
                 ].join(", "),
               }} />
               {/* Cool glow — blue relief, fades in with headline */}
