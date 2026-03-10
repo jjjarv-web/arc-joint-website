@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import Image from "next/image";
 import Link from "next/link";
 import type { SearchResult } from "@/lib/types";
 import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
@@ -188,6 +187,12 @@ export function HomeExperience() {
           "-=0.2"
         )
         .fromTo(
+          ".hero-trust",
+          { autoAlpha: 0 },
+          { autoAlpha: 1, duration: 0.8 },
+          "-=0.4"
+        )
+        .fromTo(
           ".hero-scroll-hint",
           { autoAlpha: 0 },
           { autoAlpha: 1, duration: 1 },
@@ -213,10 +218,6 @@ export function HomeExperience() {
         );
       });
 
-      // Initial states for disruption elements
-      gsap.set(".disruption-glow-cool", { autoAlpha: 0 });
-      gsap.set(".disruption-glow-hot", { autoAlpha: 1 });
-
       const disruptionTimeline = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: {
@@ -228,40 +229,16 @@ export function HomeExperience() {
       });
 
       disruptionTimeline
-        // Eyebrow + image enter together
         .fromTo(
           ".disruption-eyebrow",
           { autoAlpha: 0, y: 10 },
           { autoAlpha: 1, y: 0, duration: 1.9 }
         )
         .fromTo(
-          ".disruption-cinematic",
-          { autoAlpha: 0, y: 20, scale: 0.97, filter: "blur(4px)" },
-          { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 2.0 },
-          0.3
-        )
-        // Headline enters — dramatic pause then reveal
-        .fromTo(
           ".disruption-headline",
           { autoAlpha: 0, scale: 0.96, y: 12, z: -35, filter: "blur(2px)" },
           { autoAlpha: 1, scale: 1, y: 0, z: 0, filter: "blur(0px)", duration: 2.2 },
           "+=0.5"
-        )
-        // Color shift: hot red cools to blue as headline lands
-        .to(
-          ".disruption-glow-hot",
-          { autoAlpha: 0, duration: 1.8 },
-          "<+=0.4"
-        )
-        .to(
-          ".disruption-glow-cool",
-          { autoAlpha: 1, duration: 1.8 },
-          "<"
-        )
-        .to(
-          ".disruption-xray",
-          { filter: "drop-shadow(0 0 45px rgba(100,200,255,0.35)) drop-shadow(0 0 70px rgba(138,210,255,0.14))", duration: 1.8 },
-          "<"
         )
         // Headline settles with subtle scale
         .to(
@@ -572,6 +549,9 @@ export function HomeExperience() {
           </svg>
           Find a location near you
         </button>
+        <p className="hero-trust mt-3 text-[11px] tracking-wide text-black/22">
+          Board-certified surgeons
+        </p>
         <button
           type="button"
           onClick={() => {
@@ -593,32 +573,6 @@ export function HomeExperience() {
           <h2 className="disruption-headline mt-12 origin-center text-[clamp(46px,9vw,92px)] font-semibold leading-none">
             What if it isn&apos;t?
           </h2>
-          <div className="disruption-cinematic mt-14 flex justify-center">
-            <div className="relative aspect-[3/4] w-[280px] md:w-[340px]">
-              <Image
-                src="/images/knee-xray.png"
-                alt="X-ray visualization of knee joint pain"
-                fill
-                sizes="(max-width: 768px) 280px, 340px"
-                className="disruption-xray object-contain object-center"
-                style={{ filter: "drop-shadow(0 0 45px rgba(255,60,30,0.4)) drop-shadow(0 0 70px rgba(255,80,50,0.15))" }}
-              />
-              {/* Hot glow — red pain, visible at start */}
-              <div className="disruption-glow-hot pointer-events-none absolute inset-0" style={{
-                background: [
-                  "radial-gradient(ellipse 45% 32% at 50% 42%, rgba(255,50,20,0.42) 0%, rgba(255,80,40,0.18) 40%, transparent 68%)",
-                  "radial-gradient(ellipse 58% 42% at 50% 42%, rgba(255,100,60,0.10) 0%, transparent 72%)",
-                ].join(", "),
-              }} />
-              {/* Cool glow — blue relief, fades in with headline */}
-              <div className="disruption-glow-cool pointer-events-none absolute inset-0" style={{
-                background: [
-                  "radial-gradient(ellipse 60% 40% at 50% 42%, rgba(100,200,255,0.35) 0%, rgba(138,210,255,0.15) 40%, transparent 72%)",
-                  "radial-gradient(ellipse 80% 55% at 50% 42%, rgba(106,180,255,0.10) 0%, transparent 80%)",
-                ].join(", "),
-              }} />
-            </div>
-          </div>
         </div>
       </section>
 
@@ -1201,6 +1155,13 @@ export function HomeExperience() {
           )}
         </div>
       </section>
+
+      <div className="relative z-40 bg-white px-6 pb-10 pt-16 text-center">
+        <div className="mx-auto h-px w-16 bg-black/[0.06]" />
+        <p className="mt-8 text-[10px] uppercase tracking-[0.22em] text-black/15">
+          FDA-cleared · Peer-reviewed · Medicare accepted · Board-certified physicians
+        </p>
+      </div>
 
       <BookingModal
         isOpen={bookingModal !== null}
