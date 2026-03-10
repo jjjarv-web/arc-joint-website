@@ -1,16 +1,12 @@
 export type Procedure = "PNS";
 
-export type JointRegion =
+export type TreatmentArea =
   | "cervical"
-  | "left-shoulder"
-  | "right-shoulder"
+  | "shoulder"
   | "lumbar"
-  | "left-hip"
-  | "right-hip"
-  | "left-knee"
-  | "right-knee"
-  | "left-ankle"
-  | "right-ankle";
+  | "hip"
+  | "knee"
+  | "ankle";
 
 export interface ClinicLocation {
   id: string;
@@ -27,7 +23,7 @@ export interface ClinicLocation {
   bookingUrl: string;
   verified: boolean;
   procedures: Procedure[];
-  treatmentsSupported: JointRegion[];
+  treatmentsSupported: TreatmentArea[];
 }
 
 export interface SearchResult extends ClinicLocation {

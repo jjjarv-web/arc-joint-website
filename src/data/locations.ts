@@ -1,4 +1,4 @@
-import type { ClinicLocation, JointRegion } from "@/lib/types";
+import type { ClinicLocation } from "@/lib/types";
 
 export const locations: ClinicLocation[] = [
   // Neurosurgeons (2)
@@ -36,7 +36,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: false,
     procedures: ["PNS"],
-    treatmentsSupported: ["cervical", "lumbar", "left-shoulder", "right-shoulder"],
+    treatmentsSupported: ["cervical", "lumbar", "shoulder"],
   },
   // Orthopedic Surgeons (4)
   {
@@ -55,7 +55,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: true,
     procedures: ["PNS"],
-    treatmentsSupported: ["left-knee", "right-knee"],
+    treatmentsSupported: ["knee"],
   },
   {
     id: "az-sunrise-ortho",
@@ -73,7 +73,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: true,
     procedures: ["PNS"],
-    treatmentsSupported: ["left-knee", "right-knee", "left-hip", "right-hip"],
+    treatmentsSupported: ["knee", "hip"],
   },
   {
     id: "az-cactus-ortho",
@@ -91,7 +91,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: false,
     procedures: ["PNS"],
-    treatmentsSupported: ["left-shoulder", "right-shoulder", "left-ankle", "right-ankle"],
+    treatmentsSupported: ["shoulder", "ankle"],
   },
   {
     id: "az-mesa-ortho",
@@ -109,7 +109,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: true,
     procedures: ["PNS"],
-    treatmentsSupported: ["left-knee", "right-knee", "left-shoulder", "right-shoulder", "left-hip", "right-hip"],
+    treatmentsSupported: ["knee", "shoulder", "hip"],
   },
   // Interventional Radiologists (4) — vascular clinics
   {
@@ -128,7 +128,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: false,
     procedures: ["PNS"],
-    treatmentsSupported: ["left-ankle", "right-ankle"],
+    treatmentsSupported: ["ankle"],
   },
   {
     id: "az-radiology-hip",
@@ -146,7 +146,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: true,
     procedures: ["PNS"],
-    treatmentsSupported: ["left-hip", "right-hip"],
+    treatmentsSupported: ["hip"],
   },
   {
     id: "az-radiology-shoulder",
@@ -164,7 +164,7 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: false,
     procedures: ["PNS"],
-    treatmentsSupported: ["cervical", "left-shoulder", "right-shoulder"],
+    treatmentsSupported: ["cervical", "shoulder"],
   },
   {
     id: "az-radiology-comprehensive",
@@ -182,17 +182,6 @@ export const locations: ClinicLocation[] = [
     bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
     verified: true,
     procedures: ["PNS"],
-    treatmentsSupported: [
-      "cervical",
-      "left-shoulder",
-      "right-shoulder",
-      "lumbar",
-      "left-hip",
-      "right-hip",
-      "left-knee",
-      "right-knee",
-      "left-ankle",
-      "right-ankle",
-    ],
+    treatmentsSupported: ["cervical", "shoulder", "lumbar", "hip", "knee", "ankle"],
   },
 ];

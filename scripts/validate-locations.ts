@@ -7,24 +7,20 @@
  * - Empty required fields
  * - ZIP format (5 digits)
  * - bookingUrl starts with https://
- * - treatmentsSupported values are valid JointRegions
+ * - treatmentsSupported values are valid TreatmentAreas
  * - procedures values are valid Procedures
  * - lat / lon are finite numbers
  */
 
 import { locations } from "../src/data/locations";
 
-const VALID_JOINT_REGIONS = new Set([
+const VALID_TREATMENT_AREAS = new Set([
   "cervical",
-  "left-shoulder",
-  "right-shoulder",
+  "shoulder",
   "lumbar",
-  "left-hip",
-  "right-hip",
-  "left-knee",
-  "right-knee",
-  "left-ankle",
-  "right-ankle",
+  "hip",
+  "knee",
+  "ankle",
 ]);
 
 const VALID_PROCEDURES = new Set(["PNS"]);
@@ -100,9 +96,9 @@ locations.forEach((loc, idx) => {
   if (!Array.isArray(loc.treatmentsSupported) || loc.treatmentsSupported.length === 0) {
     err(label, "treatmentsSupported must be a non-empty array");
   } else {
-    for (const region of loc.treatmentsSupported) {
-      if (!VALID_JOINT_REGIONS.has(region)) {
-        err(label, `Invalid treatmentsSupported value: "${region}"`);
+    for (const area of loc.treatmentsSupported) {
+      if (!VALID_TREATMENT_AREAS.has(area)) {
+        err(label, `Invalid treatmentsSupported value: "${area}"`);
       }
     }
   }

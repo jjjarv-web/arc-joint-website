@@ -5,73 +5,49 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
-import type { JointRegion } from "@/lib/types";
+import type { TreatmentArea } from "@/lib/types";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-// Backward-compat alias — HomeExperience still imports this name
-export type KneePainRegion = JointRegion;
-
-export { type JointRegion };
-
 interface BodySelectorProps {
-  selectedRegion: JointRegion | "";
-  onSelect: (region: JointRegion) => void;
+  selectedRegion: TreatmentArea | "";
+  onSelect: (region: TreatmentArea) => void;
   visible?: boolean;
 }
 
 const TRUST_HEADLINE = "Performed by Orthopedic Surgeons and Neurosurgeons";
 
-// Labels shown on hover tooltip
-const REGION_LABEL: Record<JointRegion, string> = {
-  cervical: "Cervical Spine",
-  "left-shoulder": "Left Shoulder",
-  "right-shoulder": "Right Shoulder",
-  lumbar: "Lumbar Spine",
-  "left-hip": "Left Hip",
-  "right-hip": "Right Hip",
-  "left-knee": "Left Knee",
-  "right-knee": "Right Knee",
-  "left-ankle": "Left Ankle",
-  "right-ankle": "Right Ankle",
-};
-
 const PNG_ASPECT_RATIO = 2000 / 4000; // width / height = 0.5
 const SOFT_GATE_MS = 2400;
 
 // ── Hotspot definitions ──────────────────────────────────────────────────────
-// x/y: normalized position on the body PNG (0–1)
-// w/h: size as % of the image container — non-square values create ellipses
-// The inner core uses border-radius: 50% which becomes an oval matching w×h
+// Internal IDs for positioning; emits TreatmentArea on select
+type HotspotId = string;
+
 interface Hotspot {
-  id: JointRegion;
+  id: HotspotId;
+  area: TreatmentArea;
+  label: string;
   x: number;
   y: number;
-  w: string; // CSS width %
-  h: string; // CSS height %
+  w: string;
+  h: string;
 }
 
 const HOTSPOTS: Hotspot[] = [
-  // Cervical — vertical oval on the neck
-  { id: "cervical",       x: 0.511, y: 0.150, w: "5%",   h: "7.5%"  },
-  // Shoulders — on glenohumeral joint, taller oval
-  { id: "left-shoulder",  x: 0.407, y: 0.195, w: "10%",  h: "6%"    },
-  { id: "right-shoulder", x: 0.613, y: 0.195, w: "10%",  h: "6%"    },
-  // Lumbar — narrow elongated vertical glow on the lower spine
-  { id: "lumbar",         x: 0.513, y: 0.378, w: "4.5%", h: "9%"    },
-  // Hips — moved medial toward acetabulum
-  { id: "left-hip",       x: 0.440, y: 0.477, w: "10%",  h: "7%"    },
-  { id: "right-hip",      x: 0.582, y: 0.477, w: "10%",  h: "7%"    },
-  // Knees
-  { id: "left-knee",      x: 0.462, y: 0.686, w: "6.5%", h: "11%"   },
-  { id: "right-knee",     x: 0.557, y: 0.686, w: "6.5%", h: "11%"   },
-  // Ankles — adjusted to ankle joint center
-  { id: "left-ankle",     x: 0.470, y: 0.912, w: "5%",   h: "6.5%"  },
-  { id: "right-ankle",    x: 0.552, y: 0.912, w: "5%",   h: "6.5%"  },
+  { id: "cervical",        area: "cervical",  label: "Cervical Spine",  x: 0.511, y: 0.150, w: "5%",   h: "7.5%"  },
+  { id: "left-shoulder",   area: "shoulder",  label: "Left Shoulder",   x: 0.407, y: 0.195, w: "10%",  h: "6%"    },
+  { id: "right-shoulder",  area: "shoulder",  label: "Right Shoulder",  x: 0.613, y: 0.195, w: "10%",  h: "6%"    },
+  { id: "lumbar",          area: "lumbar",    label: "Lumbar Spine",    x: 0.513, y: 0.378, w: "4.5%", h: "9%"    },
+  { id: "left-hip",        area: "hip",       label: "Left Hip",        x: 0.440, y: 0.477, w: "10%",  h: "7%"    },
+  { id: "right-hip",       area: "hip",       label: "Right Hip",       x: 0.582, y: 0.477, w: "10%",  h: "7%"    },
+  { id: "left-knee",       area: "knee",      label: "Left Knee",       x: 0.462, y: 0.686, w: "6.5%", h: "11%"   },
+  { id: "right-knee",      area: "knee",      label: "Right Knee",      x: 0.557, y: 0.686, w: "6.5%", h: "11%"   },
+  { id: "left-ankle",      area: "ankle",     label: "Left Ankle",      x: 0.470, y: 0.912, w: "5%",   h: "6.5%"  },
+  { id: "right-ankle",     area: "ankle",     label: "Right Ankle",     x: 0.552, y: 0.912, w: "5%",   h: "6.5%"  },
 ];
 
-// Knees get a slightly brighter resting glow than other joints
-const BRIGHTER_JOINT_IDS = new Set<JointRegion>(["left-knee", "right-knee"]);
+const BRIGHTER_IDS = new Set(["left-knee", "right-knee"]);
 
 export function BodySelector({ selectedRegion, onSelect, visible = true }: BodySelectorProps) {
   const sectionRef = useRef<HTMLElement>(null);
@@ -95,9 +71,9 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
       ? new URLSearchParams(window.location.search).get("debugHotspots") === "1"
       : false
   );
-  const [hoverRegion, setHoverRegion] = useState<JointRegion | "">("");
+  const [hoverHotspot, setHoverHotspot] = useState<HotspotId | "">("");
   const [cursorPoint, setCursorPoint] = useState<{ x: number; y: number }>({ x: 50, y: 68 });
-  const [pressedRegion, setPressedRegion] = useState<JointRegion | "">("");
+  const [pressedHotspot, setPressedHotspot] = useState<HotspotId | "">("");
 
   useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -128,8 +104,8 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
       const blurStart = isMobile ? 4 : 6;
       const stageElement = sectionRef.current?.querySelector(".body-stage");
 
-      setHoverRegion("");
-      setPressedRegion("");
+      setHoverHotspot("");
+      setPressedHotspot("");
       clickLockRef.current = false;
       interactiveRef.current = reducedMotion;
       gateTriggeredRef.current = false;
@@ -334,7 +310,7 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
           gateTriggeredRef.current = false;
           setInteractive(false);
           setSoftGateActive(false);
-          setHoverRegion("");
+          setHoverHotspot("");
           if (gateTimeoutRef.current) {
             window.clearTimeout(gateTimeoutRef.current);
             gateTimeoutRef.current = null;
@@ -394,37 +370,40 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
   // Hover glow brightening (desktop only — touch already filtered at pointer level)
   useEffect(() => {
     if (!interactive || reducedMotion) return;
-    if (hoverRegion) {
-      gsap.to(`.joint-glow-fill--${hoverRegion}`, {
+    if (hoverHotspot) {
+      gsap.to(`.joint-glow-fill--${hoverHotspot}`, {
         autoAlpha: 1,
-        duration: 0.18,
+        scale: 1.15,
+        duration: 0.2,
         ease: "power2.out",
         overwrite: "auto",
       });
-      gsap.to(`.joint-hint-core--${hoverRegion}`, {
-        boxShadow: "0 0 32px rgba(138,210,255,0.34)",
-        duration: 0.18,
+      gsap.to(`.joint-hint-core--${hoverHotspot}`, {
+        boxShadow: "0 0 0 1px rgba(138,210,255,0.5), 0 0 40px rgba(138,210,255,0.45)",
+        border: "1px solid rgba(138,210,255,0.45)",
+        duration: 0.2,
         ease: "power2.out",
         overwrite: "auto",
       });
     }
-    // Reset all non-hovered joints back to resting state
-    HOTSPOTS.filter((h) => h.id !== hoverRegion).forEach((h) => {
-      const br = BRIGHTER_JOINT_IDS.has(h.id);
+    HOTSPOTS.filter((h) => h.id !== hoverHotspot).forEach((h) => {
+      const br = BRIGHTER_IDS.has(h.id);
       gsap.to(`.joint-glow-fill--${h.id}`, {
         autoAlpha: 0.82,
+        scale: 1,
         duration: 0.28,
         ease: "power2.out",
         overwrite: "auto",
       });
       gsap.to(`.joint-hint-core--${h.id}`, {
         boxShadow: `0 0 ${br ? "20" : "14"}px rgba(138,210,255,${br ? "0.16" : "0.10"})`,
+        border: `0.5px solid rgba(138,210,255,${br ? "0.28" : "0.18"})`,
         duration: 0.28,
         ease: "power2.out",
         overwrite: "auto",
       });
     });
-  }, [hoverRegion, interactive, reducedMotion]);
+  }, [hoverHotspot, interactive, reducedMotion]);
 
   // Gentle idle pulse on all hotspots after becoming interactive
   useEffect(() => {
@@ -469,7 +448,7 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
     );
   }, [visible]);
 
-  const handleSelect = (region: JointRegion) => {
+  const handleSelect = (hotspot: Hotspot) => {
     if (!interactiveRef.current || clickLockRef.current) return;
     clickLockRef.current = true;
     setSoftGateActive(false);
@@ -478,23 +457,22 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
       gateTimeoutRef.current = null;
     }
     if (pulseTimeoutRef.current) window.clearTimeout(pulseTimeoutRef.current);
-    setPressedRegion(region);
+    setPressedHotspot(hotspot.id);
 
-    // Selected joint brightens; all others fade back
-    gsap.to(`.joint-hint-core--${region}`, {
+    gsap.to(`.joint-hint-core--${hotspot.id}`, {
       scale: 1.3,
       boxShadow: "0 0 0 1.5px rgba(138,210,255,0.8),0 0 48px rgba(138,210,255,0.55)",
       duration: 0.16,
       ease: "power2.out",
       overwrite: "auto",
     });
-    gsap.to(`.joint-glow-fill--${region}`, {
+    gsap.to(`.joint-glow-fill--${hotspot.id}`, {
       autoAlpha: 1,
       duration: 0.16,
       ease: "power2.out",
       overwrite: "auto",
     });
-    HOTSPOTS.filter((h) => h.id !== region).forEach((h) => {
+    HOTSPOTS.filter((h) => h.id !== hotspot.id).forEach((h) => {
       gsap.to(`.joint-hint-core--${h.id}`, {
         autoAlpha: 0.25,
         scale: 0.9,
@@ -531,8 +509,8 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
     });
 
     pulseTimeoutRef.current = window.setTimeout(() => {
-      onSelect(region);
-      setPressedRegion("");
+      onSelect(hotspot.area);
+      setPressedHotspot("");
     }, 240);
   };
 
@@ -570,7 +548,7 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
     }
 
     const isMobile = window.matchMedia("(max-width: 767px)").matches;
-    const hitRadius = isMobile ? 0.16 : 0.12;
+    const hitRadius = isMobile ? 0.16 : 0.15;
     if (!best || bestDist > hitRadius) return null;
 
     return {
@@ -630,7 +608,7 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
             <div className="relative mx-auto h-[58vh] w-full overflow-hidden md:h-[66vh]">
               <div
                 className={`body-image-shell relative h-full w-full transition-transform duration-300 will-change-[transform,opacity,filter] ${
-                  pressedRegion || selectedRegion ? "scale-[1.02]" : "scale-100"
+                  pressedHotspot || selectedRegion ? "scale-[1.02]" : "scale-100"
                 }`}
               >
                 <div className="body-figure relative h-full w-full">
@@ -676,20 +654,19 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
                   if (!interactiveRef.current || e.pointerType === "touch") return;
                   const result = resolveHotspotFromEvent(e.clientX, e.clientY);
                   if (!result) {
-                    setHoverRegion("");
+                    setHoverHotspot("");
                     return;
                   }
-                  setHoverRegion(result.hotspot.id);
+                  setHoverHotspot(result.hotspot.id);
                   setCursorPoint({ x: result.x, y: result.y });
                 }}
-                onPointerLeave={() => setHoverRegion("")}
+                onPointerLeave={() => setHoverHotspot("")}
                 onPointerUp={(e) => {
                   if (!interactiveRef.current) return;
                   const result = resolveHotspotFromEvent(e.clientX, e.clientY);
                   if (!result) return;
-                  setHoverRegion(result.hotspot.id);
+                  setHoverHotspot(result.hotspot.id);
                   setCursorPoint({ x: result.x, y: result.y });
-                  // Tap flash on the selected hotspot
                   gsap.fromTo(
                     `.joint-hint-core--${result.hotspot.id}`,
                     { scale: 1, boxShadow: "0 0 14px rgba(138,210,255,0.12)" },
@@ -702,24 +679,24 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
                       ease: "power2.out",
                     }
                   );
-                  handleSelect(result.hotspot.id);
+                  handleSelect(result.hotspot);
                 }}
                 className={`body-interaction-field absolute inset-0 transition-opacity ${
                   interactive ? "pointer-events-auto" : "pointer-events-none"
-                } ${hoverRegion ? "cursor-pointer" : "cursor-default"}`}
+                } ${hoverHotspot ? "cursor-pointer" : "cursor-default"}`}
               >
                 {/* Hotspot indicators */}
                 {HOTSPOTS.map((h) => {
-                  const isBrighter = BRIGHTER_JOINT_IDS.has(h.id);
-                  const isHovered = hoverRegion === h.id;
-                  const mobileScale = 1.6;
-                  const w = isMobile ? `${parseFloat(h.w) * mobileScale}%` : h.w;
-                  const hh = isMobile ? `${parseFloat(h.h) * mobileScale}%` : h.h;
+                  const isBrighter = BRIGHTER_IDS.has(h.id);
+                  const isHovered = hoverHotspot === h.id;
+                  const scale = isMobile ? 1.6 : 1.25;
+                  const w = `${parseFloat(h.w) * scale}%`;
+                  const hh = `${parseFloat(h.h) * scale}%`;
                   return (
                     <div
                       key={h.id}
                       className={`joint-hint pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 transition-transform duration-200 ease-out ${
-                        isHovered ? "scale-[1.18]" : "scale-100"
+                        isHovered ? "scale-[1.3]" : "scale-100"
                       }`}
                       style={{
                         left: `${h.x * 100}%`,
@@ -756,29 +733,30 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
                   </div>
                 )}
 
-                {/* Hover tooltip */}
-                {hoverRegion && (
-                  <div
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-[130%] rounded-full border border-[#8ad2ff]/45 bg-black/70 px-3 py-1 text-[11px] tracking-[0.02em] text-[#d8efff] shadow-[0_0_24px_rgba(138,210,255,0.2)] backdrop-blur-sm"
-                    style={{ left: `${cursorPoint.x}%`, top: `${cursorPoint.y}%` }}
-                  >
-                    {REGION_LABEL[hoverRegion]}
-                  </div>
-                )}
+                {hoverHotspot && (() => {
+                  const h = HOTSPOTS.find((hs) => hs.id === hoverHotspot);
+                  return h ? (
+                    <div
+                      className="pointer-events-none absolute -translate-x-1/2 -translate-y-[130%] rounded-full border border-[#8ad2ff]/45 bg-black/70 px-3 py-1 text-[11px] tracking-[0.02em] text-[#d8efff] shadow-[0_0_24px_rgba(138,210,255,0.2)] backdrop-blur-sm"
+                      style={{ left: `${cursorPoint.x}%`, top: `${cursorPoint.y}%` }}
+                    >
+                      {h.label}
+                    </div>
+                  ) : null;
+                })()}
               </div>
             </div>
           </div>
 
-          {/* Screen-reader accessible buttons */}
           <div className="sr-only" role="group" aria-label="Select pain region">
             {HOTSPOTS.map((h) => (
               <button
                 key={h.id}
                 type="button"
-                aria-label={`Select ${REGION_LABEL[h.id]} pain`}
-                onClick={() => handleSelect(h.id)}
+                aria-label={`Select ${h.label} pain`}
+                onClick={() => handleSelect(h)}
               >
-                {REGION_LABEL[h.id]}
+                {h.label}
               </button>
             ))}
           </div>

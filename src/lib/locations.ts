@@ -1,5 +1,5 @@
 import { locations } from "@/data/locations";
-import type { ClinicLocation, JointRegion, SearchResult } from "@/lib/types";
+import type { ClinicLocation, TreatmentArea, SearchResult } from "@/lib/types";
 import { haversineMiles } from "@/lib/distance";
 
 export function getAllLocations(): ClinicLocation[] {
@@ -13,11 +13,11 @@ export function getLocationBySlug(slug: string): ClinicLocation | undefined {
 export function getNearestLocations(
   originLat: number,
   originLon: number,
-  joint?: JointRegion,
+  area?: TreatmentArea,
   limit = 10
 ): SearchResult[] {
-  const pool = joint
-    ? locations.filter((l) => l.treatmentsSupported.includes(joint))
+  const pool = area
+    ? locations.filter((l) => l.treatmentsSupported.includes(area))
     : locations;
 
   return pool

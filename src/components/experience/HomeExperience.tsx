@@ -5,57 +5,46 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import Link from "next/link";
-import type { SearchResult } from "@/lib/types";
+import type { SearchResult, TreatmentArea } from "@/lib/types";
 import { AssessmentErrorBoundary } from "@/components/experience/AssessmentErrorBoundary";
 import { BodySelector } from "@/components/experience/BodySelector";
-import type { JointRegion } from "@/lib/types";
 import { LocationCard } from "@/components/experience/LocationCard";
 import { BookingModal } from "@/components/BookingModal";
 import { FindLocationOverlay } from "@/components/FindLocationOverlay";
 import {
   TREATMENT_AREA_FILTERS,
   filterByTreatmentArea,
-  jointRegionToTreatmentAreaId,
 } from "@/lib/locationFilters";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 type AssessmentStep = "knee" | "duration" | "status" | "zip";
-type PainRegion = JointRegion | "";
 
-// ── Joint display helpers ─────────────────────────────────────────────────────
-const JOINT_DISPLAY_NAME: Record<JointRegion, string> = {
-  cervical:        "cervical spine",
-  "left-shoulder": "left shoulder",
-  "right-shoulder":"right shoulder",
-  lumbar:          "lower back",
-  "left-hip":      "left hip",
-  "right-hip":     "right hip",
-  "left-knee":     "left knee",
-  "right-knee":    "right knee",
-  "left-ankle":    "left ankle",
-  "right-ankle":   "right ankle",
+const AREA_DISPLAY_NAME: Record<TreatmentArea, string> = {
+  cervical: "cervical spine",
+  shoulder: "shoulder",
+  lumbar:   "lower back",
+  hip:      "hip",
+  knee:     "knee",
+  ankle:    "ankle",
 };
 
-// Generic joint group for copy purposes
-type JointGroup = "spine" | "shoulder" | "hip" | "knee" | "ankle";
-function jointGroup(region: JointRegion): JointGroup {
-  if (region === "cervical" || region === "lumbar") return "spine";
-  if (region.includes("shoulder")) return "shoulder";
-  if (region.includes("hip")) return "hip";
-  if (region.includes("ankle")) return "ankle";
-  return "knee";
-}
+const AREA_PROCEDURE_NAME: Record<TreatmentArea, string> = {
+  cervical: "spinal surgery",
+  shoulder: "shoulder surgery",
+  lumbar:   "spinal surgery",
+  hip:      "hip replacement",
+  knee:     "knee replacement",
+  ankle:    "ankle surgery",
+};
 
 function getPersonalizedReview(
-  region: JointRegion | "",
+  area: TreatmentArea | "",
   status: string,
   duration?: string
 ): { statement: string; credential: string } {
-  const name = region ? JOINT_DISPLAY_NAME[region] : "joint";
-  const group = region ? jointGroup(region) : "knee";
+  const name = area ? AREA_DISPLAY_NAME[area] : "joint";
 
-  // Post-procedure pain — applies to all joint types
   if (status.includes("still in pain")) {
     return {
       statement: `Most people expect surgery to end the pain — but research shows a meaningful percentage of patients still report persistent pain after ${name} procedures.`,
@@ -63,21 +52,14 @@ function getPersonalizedReview(
     };
   }
 
-  // Scheduled for surgery
   if (status.includes("scheduled")) {
-    const procedureName =
-      group === "spine" ? "spinal surgery" :
-      group === "shoulder" ? "shoulder surgery" :
-      group === "hip" ? "hip replacement" :
-      group === "ankle" ? "ankle surgery" :
-      "knee replacement";
+    const procedureName = area ? AREA_PROCEDURE_NAME[area] : "joint replacement";
     return {
       statement: `${procedureName.charAt(0).toUpperCase() + procedureName.slice(1)} is a major commitment — and not every patient achieves full relief afterward.`,
       credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options that are minimally invasive and typically outpatient, before moving forward with surgery.",
     };
   }
 
-  // Waiting / pausing before surgery
   if (status.includes("waiting")) {
     return {
       statement: `Pausing before surgery is common — recovery can extend well beyond the first few weeks, and outcomes vary more than most patients expect.`,
@@ -85,7 +67,6 @@ function getPersonalizedReview(
     };
   }
 
-  // No procedure recommended yet
   const isEarly = duration?.toLowerCase().includes("less than 6");
   return {
     statement: isEarly
@@ -98,7 +79,7 @@ function getPersonalizedReview(
 export function HomeExperience() {
   const [findLocationOpen, setFindLocationOpen] = useState(false);
   const [step, setStep] = useState<AssessmentStep>("knee");
-  const [painRegion, setPainRegion] = useState<PainRegion>("");
+  const [painRegion, setPainRegion] = useState<TreatmentArea | "">("");
   const [duration, setDuration] = useState("");
   const [replacementStatus, setReplacementStatus] = useState("");
   const [zip, setZip] = useState("");
@@ -439,7 +420,7 @@ export function HomeExperience() {
       if (incoming.length > 0) {
         setActiveLocationId(incoming[0].id);
         setZipExpanded(false);
-        setAssessmentTreatmentAreaFilter(jointRegionToTreatmentAreaId(painRegion));
+        setAssessmentTreatmentAreaFilter(painRegion || null);
       }
     } catch (requestError) {
       const message =
@@ -477,8 +458,8 @@ export function HomeExperience() {
     }
   };
 
-  const handlePainSelection = (region: JointRegion) => {
-    setPainRegion(region);
+  const handlePainSelection = (area: TreatmentArea) => {
+    setPainRegion(area);
     setStep("duration");
   };
 
@@ -675,7 +656,7 @@ export function HomeExperience() {
                     style={{ opacity: 0, animation: "fadeUp 0.55s ease-out 0.2s forwards" }}
                     aria-live="polite"
                   >
-                    Let&apos;s look at your {painRegion ? JOINT_DISPLAY_NAME[painRegion] : "pain"}.
+                    Let&apos;s look at your {painRegion ? AREA_DISPLAY_NAME[painRegion] : "pain"}.
                   </p>
 
                   {/* Step indicator */}
@@ -744,7 +725,7 @@ export function HomeExperience() {
                       <span aria-hidden="true">←</span> Back
                     </button>
                     <p className="mb-5 text-[22px] font-light tracking-tight text-white">
-                      Has a doctor recommended surgery for your {painRegion ? JOINT_DISPLAY_NAME[painRegion] : "pain"}?
+                      Has a doctor recommended surgery for your {painRegion ? AREA_DISPLAY_NAME[painRegion] : "pain"}?
                     </p>
                     <div className="space-y-2.5">
                       {[
@@ -810,7 +791,7 @@ export function HomeExperience() {
                       style={{ opacity: 0, animation: "fadeIn 0.5s ease-out 0.2s forwards" }}
                       className="mb-3 text-[11px] uppercase tracking-[0.26em] text-white/50"
                     >
-                      Your {painRegion ? JOINT_DISPLAY_NAME[painRegion].charAt(0).toUpperCase() + JOINT_DISPLAY_NAME[painRegion].slice(1) : "Pain"} Review
+                      Your {painRegion ? AREA_DISPLAY_NAME[painRegion].charAt(0).toUpperCase() + AREA_DISPLAY_NAME[painRegion].slice(1) : "Pain"} Review
                     </p>
 
                     {/* Review + ZIP form — GSAP collapses this on submit */}
