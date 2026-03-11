@@ -18,7 +18,7 @@ import {
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-type AssessmentStep = "knee" | "duration" | "status" | "zip";
+type AssessmentStep = "knee" | "duration" | "status" | "avoid" | "zip";
 
 const AREA_DISPLAY_NAME: Record<TreatmentArea, string> = {
   cervical: "cervical spine",
@@ -29,51 +29,56 @@ const AREA_DISPLAY_NAME: Record<TreatmentArea, string> = {
   ankle:    "ankle",
 };
 
-const AREA_PROCEDURE_NAME: Record<TreatmentArea, string> = {
-  cervical: "spinal surgery",
-  shoulder: "shoulder surgery",
-  lumbar:   "spinal surgery",
-  hip:      "hip replacement",
-  knee:     "knee replacement",
-  ankle:    "ankle surgery",
-};
+const PIVOT_INSIGHT =
+  "Joint damage doesn't always explain joint pain. The amount of damage seen on imaging often doesn't match the pain people experience.";
 
 function getPersonalizedReview(
-  area: TreatmentArea | "",
-  status: string,
-  duration?: string
+  hopeToAvoid: string
 ): { statement: string; credential: string } {
-  const name = area ? AREA_DISPLAY_NAME[area] : "joint";
-
-  if (status.includes("still in pain")) {
-    return {
-      statement: `Most people expect surgery to end the pain — but research shows a meaningful percentage of patients still report persistent pain after ${name} procedures.`,
-      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options specifically for post-procedure pain. Peer-reviewed evidence supports that PNS can reduce persistent pain and improve function in appropriate patients.",
-    };
-  }
-
-  if (status.includes("scheduled")) {
-    const procedureName = area ? AREA_PROCEDURE_NAME[area] : "joint replacement";
-    return {
-      statement: `${procedureName.charAt(0).toUpperCase() + procedureName.slice(1)} is a major commitment — and not every patient achieves full relief afterward.`,
-      credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC options that are minimally invasive and typically outpatient, before moving forward with surgery.",
-    };
-  }
-
-  if (status.includes("waiting")) {
-    return {
-      statement: `Pausing before surgery is common — recovery can extend well beyond the first few weeks, and outcomes vary more than most patients expect.`,
-      credential: "Some orthopedic surgeons and neurosurgeons now offer ARC evaluations focused on pain relief and improved mobility using minimally invasive, typically outpatient approaches.",
-    };
-  }
-
-  const isEarly = duration?.toLowerCase().includes("less than 6");
-  return {
-    statement: isEarly
-      ? `If surgery hasn't been recommended yet, you're in the ideal ARC moment — get clarity before committing to anything irreversible.`
-      : `Exploring options before surgery is the right move — catching it early can open doors that aren't available later.`,
-    credential: "Some orthopedic surgeons and neurosurgeons now evaluate ARC approaches that are minimally invasive and typically outpatient, designed to help preserve future options.",
+  const fallback = {
+    statement: `Many people exploring ARC are looking for options beyond surgery or long-term medication. ${PIVOT_INSIGHT}`,
+    credential:
+      "ARC procedures are performed by orthopedic surgeons and neurosurgeons and are designed to address chronic pain in a minimally invasive and reversible way.",
   };
+
+  if (!hopeToAvoid?.trim()) return fallback;
+
+  const hope = hopeToAvoid.trim();
+
+  if (hope.includes("Major surgery")) {
+    return {
+      statement: `Many people exploring ARC feel the same way. They want relief without undergoing major surgery or a long recovery. ${PIVOT_INSIGHT}`,
+      credential:
+        "ARC procedures are performed by orthopedic surgeons and neurosurgeons and are designed to address chronic pain in a minimally invasive and reversible way.",
+    };
+  }
+
+  if (hope.includes("Pain medication") || hope.includes("side effects")) {
+    return {
+      statement: `Many patients are looking for options that don't rely on long-term pain medications or their side effects. ${PIVOT_INSIGHT}`,
+      credential:
+        "ARC procedures target how pain signals travel from the joint, using a minimally invasive and reversible approach performed by orthopedic and neurosurgical specialists.",
+    };
+  }
+
+  if (hope.includes("Temporary fixes") || hope.includes("injections")) {
+    return {
+      statement: `Many people become frustrated when treatments provide only temporary relief. ${PIVOT_INSIGHT}`,
+      credential:
+        "ARC procedures are designed to address persistent pain using a minimally invasive and reversible technique performed by orthopedic surgeons and neurosurgeons.",
+    };
+  }
+
+  if (hope.includes("Living with chronic") || hope.includes("chronic pain")) {
+    return {
+      statement:
+        "Living with chronic pain can make it feel like there are no good options left. But research shows joint damage doesn't always explain joint pain. Many people have severe arthritis with little pain, while others have intense pain with moderate damage.",
+      credential:
+        "ARC procedures are performed by orthopedic and neurosurgical specialists and aim to reduce chronic pain using a minimally invasive and reversible approach.",
+    };
+  }
+
+  return fallback;
 }
 
 export function HomeExperience() {
@@ -82,6 +87,7 @@ export function HomeExperience() {
   const [painRegion, setPainRegion] = useState<TreatmentArea | "">("");
   const [duration, setDuration] = useState("");
   const [replacementStatus, setReplacementStatus] = useState("");
+  const [hopeToAvoid, setHopeToAvoid] = useState("");
   const [zip, setZip] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -392,6 +398,7 @@ export function HomeExperience() {
     setPainRegion("");
     setDuration("");
     setReplacementStatus("");
+    setHopeToAvoid("");
     setZip("");
     setZipExpanded(false);
     setError("");
@@ -668,7 +675,7 @@ export function HomeExperience() {
                       Step 2 of 4
                     </p>
                     <div className="mx-auto mt-2 h-px w-28 bg-white/12">
-                      <div className="h-full w-1/3 bg-white/45" />
+                      <div className="h-full w-1/4 bg-white/45" />
                     </div>
                   </div>
 
@@ -709,7 +716,7 @@ export function HomeExperience() {
                       Step 3 of 4
                     </p>
                     <div className="mx-auto mt-2 h-px w-28 bg-white/12">
-                      <div className="h-full w-2/3 bg-white/45 transition-all duration-500" />
+                      <div className="h-full w-2/4 bg-white/45 transition-all duration-500" />
                     </div>
                   </div>
                   <div
@@ -737,7 +744,7 @@ export function HomeExperience() {
                         <button
                           key={value}
                           type="button"
-                          onClick={() => { setReplacementStatus(value); setStep("zip"); }}
+                          onClick={() => { setReplacementStatus(value); setStep("avoid"); }}
                           className="group flex w-full items-center justify-between rounded-xl border border-white/[0.13] bg-white/[0.05] px-5 py-4 text-left text-white/85 transition-all duration-200 hover:border-white/22 hover:bg-white/[0.10] hover:text-white active:scale-[0.98]"
                         >
                           <span className="text-[17px] font-light">{value}</span>
@@ -750,7 +757,57 @@ export function HomeExperience() {
               </div>
             )}
 
-            {/* ── Step 4: zip / analyzing / review ── */}
+            {/* ── Step 4: What are you hoping to avoid? ── */}
+            {step === "avoid" && (
+              <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
+                <div className="w-full max-w-lg">
+                  <div className="mb-4">
+                    <p className="text-center text-[11px] uppercase tracking-[0.18em] text-white/50">
+                      Step 4 of 4
+                    </p>
+                    <div className="mx-auto mt-2 h-px w-28 bg-white/12">
+                      <div className="h-full w-full bg-white/45 transition-all duration-500" />
+                    </div>
+                  </div>
+                  <div
+                    className="rounded-2xl border border-white/[0.14] bg-white/[0.06] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.07)] md:p-7"
+                    role="region"
+                    aria-label="Step 4 of 4"
+                  >
+                    <button
+                      type="button"
+                      onClick={() => setStep("status")}
+                      className="mb-5 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/50 transition-colors hover:text-white/75"
+                    >
+                      <span aria-hidden="true">←</span> Back
+                    </button>
+                    <p className="mb-5 text-[22px] font-light tracking-tight text-white">
+                      What are you hoping to avoid?
+                    </p>
+                    <div className="space-y-2.5">
+                      {[
+                        "Major surgery",
+                        "Pain medication side effects",
+                        "Temporary fixes like injections",
+                        "Living with chronic pain",
+                      ].map((value) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => { setHopeToAvoid(value); setStep("zip"); }}
+                          className="group flex w-full items-center justify-between rounded-xl border border-white/[0.13] bg-white/[0.05] px-5 py-4 text-left text-white/85 transition-all duration-200 hover:border-white/22 hover:bg-white/[0.10] hover:text-white active:scale-[0.98]"
+                        >
+                          <span className="text-[17px] font-light">{value}</span>
+                          <span className="text-white/35 transition-colors group-hover:text-white/65" aria-hidden="true">›</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── ZIP / analyzing / review (not a step) ── */}
             {step === "zip" && (
               <div className="flex min-h-full flex-col items-center justify-center px-6 py-12">
                 <div className="w-full max-w-lg">
@@ -773,13 +830,13 @@ export function HomeExperience() {
               )}
 
             {!analyzing && reviewVisible && (() => {
-                const { statement, credential } = getPersonalizedReview(painRegion, replacementStatus, duration);
+                const { statement, credential } = getPersonalizedReview(hopeToAvoid);
                 return (
                   <div className="w-full">
                     {/* Back */}
                     <button
                       type="button"
-                      onClick={() => setStep("status")}
+                      onClick={() => setStep("avoid")}
                       style={{ opacity: 0, animation: "fadeIn 0.4s ease-out 0.1s forwards" }}
                       className="mb-8 flex items-center gap-1.5 text-[11px] uppercase tracking-[0.15em] text-white/50 hover:opacity-80"
                     >
