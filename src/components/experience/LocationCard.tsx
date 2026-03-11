@@ -152,7 +152,7 @@ export function LocationCard({ location, isActive, isClosest, variant, onSelect,
                 }
               }}
             >
-              Request Appointment
+              Check Availability
             </button>
 
             {/* Nudge copy */}

@@ -19,7 +19,7 @@ export function BookingCTA({ bookingUrl, locationName, className }: BookingCTAPr
         onClick={() => setIsOpen(true)}
         className={className}
       >
-        Request Appointment
+        Check Availability
       </button>
       <BookingModal
         isOpen={isOpen}

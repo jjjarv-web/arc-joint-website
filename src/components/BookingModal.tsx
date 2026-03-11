@@ -53,7 +53,7 @@ export function BookingModal({ isOpen, onClose, bookingUrl, locationName }: Book
         <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] px-5 py-4">
           <div className="min-w-0">
             <p className="text-[10px] uppercase tracking-[0.18em] text-black/35">
-              Request Appointment
+              Check Availability
             </p>
             <p className="mt-0.5 truncate text-[15px] font-light tracking-tight text-black">
               {locationName}
@@ -75,8 +75,8 @@ export function BookingModal({ isOpen, onClose, bookingUrl, locationName }: Book
         {/* Reassurance strip */}
         <div className="shrink-0 border-b border-black/[0.04] bg-black/[0.015] px-5 py-3">
           <p className="text-[12px] leading-relaxed text-black/45">
-            Requesting is the fastest way to connect — the clinic will reach out to confirm.
-            Insurance is verified before your visit.
+            Select preferred date and time. This is the fastest way to connect — the clinic will reach out after you select.
+            Insurance is checked on the call prior to your visit.
           </p>
         </div>
 

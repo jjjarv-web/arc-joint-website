@@ -202,7 +202,7 @@ export function LocationsBrowseList({ locations, zip, initialArea }: LocationsBr
                                   setBookingModal({ url: location.bookingUrl, name: location.name });
                                 }}
                               >
-                                Request Appointment
+                                Check Availability
                               </button>
                               <div className="w-full text-left md:text-right">
                                 <p className="text-[11px] leading-snug text-black/30">
