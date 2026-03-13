@@ -15,7 +15,7 @@ export const locations: ClinicLocation[] = [
     zip: "85016",
     lat: 33.5092,
     lon: -112.0298,
-    bookingUrl: "https://link.trueprecision.ai/widget/booking/eXs7Lvi8HKUuTqZGeck6",
+    bookingUrl: "https://link.trueprecision.ai/widget/booking/PunhvTauvWfnK5X7d6Hn",
     verified: true,
     procedures: ["PNS"],
     treatmentsSupported: ["cervical", "lumbar"],
