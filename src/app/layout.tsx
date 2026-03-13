@@ -9,9 +9,36 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ARC | Alternative Replacement Care",
+  metadataBase: new URL("https://arcjoint.com"),
+  title: {
+    default: "ARC | Preserve-First Joint Pain Treatment",
+    template: "%s | ARC",
+  },
   description:
-    "Alternative Replacement Care. Preserve before replace with precision neuromodulation and location-based care discovery.",
+    "ARC connects patients with orthopedic surgeons and neurosurgeons offering minimally invasive, reversible joint pain procedures before surgery. Find a location and check availability.",
+  alternates: {
+    canonical: "https://arcjoint.com",
+  },
+  openGraph: {
+    type: "website",
+    siteName: "ARC Joint",
+    title: "ARC | Preserve-First Joint Pain Treatment",
+    description:
+      "ARC connects patients with orthopedic surgeons and neurosurgeons offering minimally invasive, reversible joint pain procedures before surgery.",
+    url: "https://arcjoint.com",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ARC | Preserve-First Joint Pain Treatment",
+    description:
+      "Minimally invasive, reversible joint pain procedures. Preserve before replace.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   icons: {
     icon: "/favicon.svg",
   },

@@ -26,9 +26,26 @@ export async function generateMetadata({ params }: LocationPageProps): Promise<M
     return { title: "Location Not Found | ARC" };
   }
 
+  const url = `https://arcjoint.com/locations/${location.slug}`;
+  const title = `${location.name} | ARC Location`;
+  const description = `${location.name} in ${location.city}, ${location.state}. ${location.description}`;
+
   return {
-    title: `${location.name} | ARC Location`,
-    description: `${location.name} in ${location.city}, ${location.state}. ${location.description}`,
+    title,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title,
+      description,
+      url,
+      type: "website",
+      siteName: "ARC Joint",
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+    },
   };
 }
 
@@ -72,8 +89,45 @@ export default async function LocationPage({ params, searchParams }: LocationPag
   const mapsEmbedUrl = `https://maps.google.com/maps?q=${mapsQuery}&output=embed`;
   const mapsOpenUrl = `https://maps.google.com/maps?q=${mapsQuery}`;
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "MedicalClinic",
+    name: location.name,
+    url: `https://arcjoint.com/locations/${location.slug}`,
+    description: location.description,
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: location.address,
+      addressLocality: location.city,
+      addressRegion: location.state,
+      postalCode: location.zip,
+      addressCountry: "US",
+    },
+    geo: {
+      "@type": "GeoCoordinates",
+      latitude: location.lat,
+      longitude: location.lon,
+    },
+    medicalSpecialty: location.specialties.map((s) =>
+      s === "Neurosurgeon" ? "https://schema.org/Neurological" : "https://schema.org/Orthopedic"
+    ),
+    availableService: location.procedures.map((p) => ({
+      "@type": "MedicalTherapy",
+      name: PROCEDURE_LABELS[p] ?? p,
+    })),
+    isPartOf: {
+      "@type": "MedicalBusiness",
+      name: "ARC Joint",
+      url: "https://arcjoint.com",
+    },
+  };
+
   return (
     <main className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* ── Dark hero ─────────────────────────────────────────── */}
       <section className="bg-[#0d0d0d] px-6 pb-14 pt-16 md:px-10">

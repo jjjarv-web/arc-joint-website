@@ -19,9 +19,24 @@ export async function generateMetadata({ params }: LibraryPageProps): Promise<Me
     return { title: "Article Not Found | ARC Library" };
   }
 
+  const url = `https://arcjoint.com/library/${article.slug}`;
+
   return {
-    title: `${article.title} | ARC Library`,
+    title: article.title,
     description: article.description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: article.title,
+      description: article.description,
+      url,
+      type: "article",
+      siteName: "ARC Joint",
+    },
+    twitter: {
+      card: "summary",
+      title: article.title,
+      description: article.description,
+    },
   };
 }
 
@@ -33,8 +48,29 @@ export default async function LibraryPage({ params }: LibraryPageProps) {
     notFound();
   }
 
+  const articleUrl = `https://arcjoint.com/library/${article.slug}`;
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.description,
+    url: articleUrl,
+    publisher: {
+      "@type": "Organization",
+      name: "ARC Joint",
+      url: "https://arcjoint.com",
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": articleUrl },
+    keywords: article.keywords.join(", "),
+  };
+
   return (
     <main className="min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Dark hero */}
       <section className="bg-[#0d0d0d] px-6 pb-14 pt-16 md:px-10">
