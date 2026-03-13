@@ -23,11 +23,20 @@ export function BookingModal({ isOpen, onClose, bookingUrl, locationName }: Book
     if (!isOpen) return;
 
     setIframeLoaded(false);
+
+    // Lock page scroll while modal is open.
+    // Both body and html are locked to cover iOS Safari (which scrolls html)
+    // and other browsers (which scroll body).
+    const prevBody = document.body.style.overflow;
+    const prevHtml = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = prevBody;
+      document.documentElement.style.overflow = prevHtml;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isOpen, handleKeyDown]);
@@ -35,22 +44,32 @@ export function BookingModal({ isOpen, onClose, bookingUrl, locationName }: Book
   if (!isOpen) return null;
 
   return (
+    // Outer shell: fixed inset-0 creates the full-screen layer.
+    // On mobile this IS the modal — no sizing tricks, no dvh, no reflow on keyboard.
+    // On desktop (md+) it acts as a centered overlay with a backdrop.
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999]"
       role="dialog"
       aria-modal="true"
       aria-label={`Book appointment at ${locationName}`}
     >
-      {/* Backdrop */}
+      {/* Backdrop — visible on desktop, invisible on mobile (modal IS the screen) */}
       <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        className="absolute inset-0 md:bg-black/60"
         onClick={onClose}
       />
 
-      {/* Modal container */}
+      {/* Modal panel
+          Mobile:  fixed inset-0 (anchored to all 4 edges, immune to keyboard resize)
+          Desktop: centered card with max-width, rounded corners, shadow
+      */}
       <div
-        className="relative z-10 mx-4 flex w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:mx-0"
-        style={{ height: "min(90dvh, 90vh)" }}
+        className="
+          absolute inset-0 flex flex-col bg-white
+          md:inset-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2
+          md:w-full md:max-w-lg md:rounded-2xl md:shadow-2xl
+          md:h-[90vh]
+        "
       >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] px-5 py-4">
@@ -83,19 +102,21 @@ export function BookingModal({ isOpen, onClose, bookingUrl, locationName }: Book
           </p>
         </div>
 
-        {/* Iframe area */}
-        <div className="relative flex-1">
-          {/* Loading spinner */}
+        {/* Iframe container
+            flex-1 + min-h-0 = fills all remaining space in the flex column.
+            The iframe itself is absolute inset-0 so it fills the container
+            exactly without any height calculation — the container owns the size.
+        */}
+        <div className="relative min-h-0 flex-1">
           {!iframeLoaded && (
             <div className="absolute inset-0 flex items-center justify-center bg-white">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-black/10 border-t-black/50" />
             </div>
           )}
-
           <iframe
             src={bookingUrl}
             title={`Book appointment at ${locationName}`}
-            className="h-full w-full border-0"
+            className="absolute inset-0 h-full w-full border-0"
             onLoad={() => setIframeLoaded(true)}
           />
         </div>
