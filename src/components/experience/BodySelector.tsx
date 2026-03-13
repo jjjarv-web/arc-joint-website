@@ -76,6 +76,15 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
   const [pressedHotspot, setPressedHotspot] = useState<HotspotId | "">("");
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#relief") return;
+    const timer = setTimeout(() => {
+      window.scrollBy({ top: 1, behavior: "instant" });
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
     const query = window.matchMedia("(prefers-reduced-motion: reduce)");
     const syncPreference = () => setReducedMotion(query.matches);
     syncPreference();
@@ -560,6 +569,7 @@ export function BodySelector({ selectedRegion, onSelect, visible = true }: BodyS
 
   return (
     <section
+      id="relief"
       ref={sectionRef}
       className={`relative bg-black text-white ${reducedMotion ? "min-h-[380vh]" : "min-h-[220vh]"}`}
     >
