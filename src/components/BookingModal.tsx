@@ -48,7 +48,10 @@ export function BookingModal({ isOpen, onClose, bookingUrl, locationName }: Book
       />
 
       {/* Modal container */}
-      <div className="relative z-10 mx-4 flex h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:mx-0">
+      <div
+        className="relative z-10 mx-4 flex w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl md:mx-0"
+        style={{ height: "min(90dvh, 90vh)" }}
+      >
         {/* Header */}
         <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] px-5 py-4">
           <div className="min-w-0">
